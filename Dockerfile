@@ -43,6 +43,7 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 
 # Copies the trainer code 
 RUN mkdir /root/trainer
+RUN mkdir /root/models
 COPY trainer/fastai_test.py /root/trainer/fastai_test.py
 
 RUN pip3 install google-cloud-storage
