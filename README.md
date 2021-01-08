@@ -2,7 +2,7 @@
 - [Introduction](#introduction)
 - [Pre-requisites](#pre-requisites)
 - [Set-up your environment](#set-up-your-environment)
-- [Train the model](#introduction)
+- [Train the model](#train-the-model)
 
 # Introduction
 Explanation of AI Platform and what we're going to do
