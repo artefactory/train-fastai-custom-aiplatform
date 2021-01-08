@@ -48,7 +48,7 @@ The first thing you’ll have to do will be to setup your working environment. H
 
 - Run image to see everything is ok
 > ```python
-> docker run --runtime=nvidia $IMAGE_URI --epochs 2
+> docker run --runtime=nvidia $IMAGE_URI --epochs 2 --bucket-name $BUCKET_NAME
 > ```
 
 - Push image
@@ -65,5 +65,6 @@ The first thing you’ll have to do will be to setup your working environment. H
 > --master-image-uri $IMAGE_URI \
 > -- \
 > --epochs=5 \
-> --model-dir=gs://$BUCKET_NAME/$MODEL_DIR
+> --bucket-name=$BUCKET_NAME \
+> --model-dir=$MODEL_DIR
 > ```
