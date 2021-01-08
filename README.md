@@ -24,15 +24,20 @@ The first thing you’ll have to do will be to setup your working environment. H
 > gcloud auth configure-docker
 > ```
 
-- Define variables
-  - BUCKET_NAME: The name of your bucket
-  - PROJECT_ID: The name of your GCP Project
+- Define global variables
+  - BUCKET_NAME: The name of your bucket in GCS
+  - PROJECT_ID: The name of your GCP Project, accessible by doing:
+> ```python
+> gcloud config list project --format "value(core.project)"
+> ```
   - REGION: The region you operate in (choose one with GPUs available, for Europe its europe-west1 usually)
-  - IMAGE_REPO_NAME: The name of the folder where will be stored your containers in Container Registry
-  - IMAGE_TAG: The tag name of your future container
+  - IMAGE_REPO_NAME: The name of the folder where will be stored your containers in Container Registry, I chose "fastai_gpu_container"
+  - IMAGE_TAG: The tag name you want to give to your future container
   - IMAGE_URI: The URI to your future container, defined by:
-    IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
-  - MODEL_DIR: The directory in your bucket that will store your trained model
+> ```python
+> export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
+> ```
+  - MODEL_DIR: The directory in your bucket that will store your trained model (e.g "models")
   - JOB_NAME: AI Platform job name
 
 - Create a bucket on GCS and upload your files in it, following the same architecture than in this drive:
