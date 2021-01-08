@@ -28,10 +28,6 @@ RUN pip3 install torch==1.7.1+cu101 -f https://download.pytorch.org/whl/torch_st
 # Install requirements
 RUN pip3 install -r requirements.txt
 
-# Installs cloudml-hypertune for hyperparameter tuning.
-# It’s not needed if you don’t want to do hyperparameter tuning.
-RUN pip3 install cloudml-hypertune
-
 # Installs google cloud sdk, this is mostly for using gsutil to export model.
 RUN wget -nv \
     https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz && \
