@@ -43,8 +43,12 @@ The first thing you’ll have to do will be to setup your working environment. H
 - Create a bucket on GCS and upload your files in it, following the same architecture than in this drive:
   https://drive.google.com/drive/folders/1JHfan6SFOXz5X0h49GOdORQQI3-rjpJX?usp=sharing
 
-# TBC
+
+# Train the model
 - Copy the repo on your VM
+> ```python
+> git clone https://github.com/artefactory/train-fastai-custom-aiplatform.git
+> ```
 
 - Build image
 > ```python
@@ -55,6 +59,7 @@ The first thing you’ll have to do will be to setup your working environment. H
 > ```python
 > docker run --runtime=nvidia $IMAGE_URI --epochs 2 --bucket-name $BUCKET_NAME
 > ```
+You can choose how many epochs to train your model on
 
 - Push image
 > ```python
@@ -69,7 +74,15 @@ The first thing you’ll have to do will be to setup your working environment. H
 > --region $REGION \
 > --master-image-uri $IMAGE_URI \
 > -- \
-> --epochs=5 \
+> --epochs=8 \
 > --bucket-name=$BUCKET_NAME \
 > --model-dir=$MODEL_DIR
 > ```
+This might take some time depending on how many epochs you chose to train your model on
+
+- You can view the status of your job with the command
+> ```python
+gcloud ai-platform jobs describe $JOB_NAME
+> ```
+
+Once the job is complete, your model will be available in your bucket, in the folder $MODEL_DIR
