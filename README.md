@@ -1,5 +1,8 @@
 # Train a FastAI model using a custom container hosted in GCP AI Platform
 - [Introduction](#introduction)
+- [Pre-requisites](#pre-requisites)
+- [Set-up your environment](#set-up-your-environment)
+- [Train the model](#introduction)
 
 # Introduction
 Explanation of AI Platform and what we're going to do
