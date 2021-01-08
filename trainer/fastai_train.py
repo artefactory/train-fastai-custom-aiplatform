@@ -16,7 +16,7 @@ from fastai.learner import load_learner
 import torch
 from google.cloud import storage
 
-# Define variables values
+# Define global variables
 MODEL_FILE_NAME = 'fastai_model.pth'
 RANDOM_STATE = 42
 VAL_SIZE = 0.2
@@ -28,19 +28,23 @@ def get_args():
     Returns:
       Dictionary of arguments.
     """
-    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    parser = argparse.ArgumentParser(description='Arguments to train the model')
     parser.add_argument(
         '--batch-size',
         type=int,
         default=16,
         metavar='N',
-        help='input batch size for training (default: 64)')
+        help='input batch size for training (default: 16)')
     parser.add_argument(
         '--epochs',
         type=int,
         default=1,
         metavar='N',
-        help='number of epochs to train (default: 10)')
+        help='number of epochs to train (default: 1)')
+    parser.add_argument(
+        '--bucket-name',
+        default=None,
+        help='The name of your bucket  in your GCP project')
     parser.add_argument(
         '--model-dir',
         default=None,
@@ -161,22 +165,18 @@ def train_classifier(train_df, lm_dls, config, args):
     if args.model_dir:
         subprocess.check_call([
             'gsutil', 'cp', MODEL_FILE_NAME,
-            os.path.join(args.model_dir, MODEL_FILE_NAME)])
+            os.path.join(f'gs://{args.bucket_name}', args.model_dir, MODEL_FILE_NAME)])
 
 
 def train_model():
-    # Define variables values
-    MODEL_FILE_NAME = 'fastai_model.pth'
-    RANDOM_STATE = 42
-    VAL_SIZE = 0.2
-    TEST_SIZE = 0.25
+    # Import args
     args = get_args()
 
     # Download necessary files
-    download_file("sacha-aiplatform", "pretrained/labelled_dataset_10k.csv", "trainer/labelled_dataset.csv")
-    download_file("sacha-aiplatform", "pretrained/vocab.pkl", "models/vocab.pkl")
-    download_file("sacha-aiplatform", "pretrained/config.json", "trainer/config.json")
-    download_file("sacha-aiplatform", "pretrained/weights.pth", "models/weights.pth")
+    download_file(args.bucket_name, "pretrained/labelled_dataset_10k.csv", "trainer/labelled_dataset.csv")
+    download_file(args.bucket_name, "pretrained/vocab.pkl", "models/vocab.pkl")
+    download_file(args.bucket_name, "pretrained/config.json", "trainer/config.json")
+    download_file(args.bucket_name, "pretrained/weights.pth", "models/weights.pth")
 
     # Format dataframe for training
     df = pd.read_csv("trainer/labelled_dataset.csv")
