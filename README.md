@@ -43,13 +43,32 @@ Create a bucket on GCS and upload your files in it
 
 
 # TBC
-- Create Dockerfile and training.py file
+- Copy the repo on your VM
 
 - Build image
+> ```python
+> docker build -f Dockerfile -t $IMAGE_URI ./
+> ```
 
-- Run image to see if everything works
+- Run image to see everything is ok
+> ```python
+> docker run --runtime=nvidia $IMAGE_URI --epochs 2
+> ```
 
 - Push image
+> ```python
+> docker push $IMAGE_URI
+> ```
+
 
 - Run AI Platform job
+> ```python
+> gcloud ai-platform jobs submit training $JOB_NAME \
+  --scale-tier BASIC_GPU \
+  --region $REGION \
+  --master-image-uri $IMAGE_URI \
+  -- \
+  --epochs=5 \
+  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR
 
+> ```
