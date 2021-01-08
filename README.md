@@ -54,23 +54,34 @@ The first thing you’ll have to do will be to setup your working environment. H
 > ```
 
 - Build image
+The image is built based on Nvidia Cuda 10.1-devel image, which should automatically be pulled when trying to build.
 > ```python
 > docker build -f Dockerfile -t $IMAGE_URI ./
 > ```
+You’ll get a success message if the image is built correctly, or an error message otherwise. Be really careful at the python, pip, pytorch and nvidia version you choose, because incompatibilities will cause the package you want to install to fail without any specific reason
+
 
 - Run image to see everything is ok
+Once your image is built, you can run the container to see if everything works (especially cuda)
+Permission to upload to GCS may be denied (403), but should work when doing it with AIP, so no worries if it's the only thing that causes errors
 > ```python
 > docker run --runtime=nvidia $IMAGE_URI --epochs 2 --bucket-name $BUCKET_NAME
 > ```
-You can choose how many epochs to train your model on
+Don't forget to specify that you want to run on GPU (nvidia runtime), and the number of epochs to train your model on
 
-- Push image
+- Push your container
+When you made sure that everything worked, you can push your image to GCR using the following command:
 > ```python
 > docker push $IMAGE_URI
 > ```
+The container will be visible in Container registry.
 
 
 - Run AI Platform job
+Now that your custom container is in GCR, everything is ready. You can start the training on AI Platform using a simple command, from any machine you want, assuming that it has access to your GCP project and to AI Platform.
+
+You just have to run the following command for everything to start running. You’ll receive a notification when the training is ready
+
 > ```python
 > gcloud ai-platform jobs submit training $JOB_NAME \
 > --scale-tier BASIC_GPU \
@@ -81,6 +92,15 @@ You can choose how many epochs to train your model on
 > --bucket-name=$BUCKET_NAME \
 > --model-dir=$MODEL_DIR
 > ```
+We specified a few parameters here:
+  - The name of the job
+  - The type of scaling we want, BASIC_GPU here
+  - The region we want our running machine to be
+  - The URI of our custom container
+  - Our arguments:
+    - The number of epochs
+    - The name of our bucket in GCS
+    - The name of the directory to store our trained model
 This might take some time depending on how many epochs you chose to train your model on
 
 - You can view the status of your job with the command
