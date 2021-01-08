@@ -1,4 +1,4 @@
-# Dockerfile
+# Initializing image
 FROM nvidia/cuda:10.1-devel
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,17 +9,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     python3-setuptools \
     python3-pip
+
 RUN pip3 install pip==20.3.1
+
 WORKDIR /root
 
-# Installs pytorch and torchvision.
-RUN pip3 install torch==1.7.1+cu101 torchvision==0.8.2+cu101 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
-
-RUN pip3 install fastai==2.1.8 ninja==1.9.0
+# Install requirements
+RUN pip3 install -r requirements.txt
 
 # Installs cloudml-hypertune for hyperparameter tuning.
 # It’s not needed if you don’t want to do hyperparameter tuning.
-RUN pip install cloudml-hypertune
+RUN pip3 install cloudml-hypertune
 
 # Installs google cloud sdk, this is mostly for using gsutil to export model.
 RUN wget -nv \
@@ -39,15 +39,16 @@ RUN wget -nv \
 ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 
 # Make sure gsutil will use the default service account
-#RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
+RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
-# Copies the trainer code 
+# Create directories to contain code and downloaded model from GCS
 RUN mkdir /root/trainer
+
 RUN mkdir /root/models
+
 COPY trainer/fastai_test.py /root/trainer/fastai_test.py
 
-RUN pip3 install google-cloud-storage
-
+# Authentificate to GCP
 CMD gcloud auth login
 
 # Sets up the entry point to invoke the trainer.

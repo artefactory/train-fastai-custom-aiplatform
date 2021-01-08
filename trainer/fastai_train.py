@@ -47,12 +47,12 @@ def get_args():
       '--model-dir',
       default=None,
       help='The directory to store the model')
-
   args = parser.parse_args()
   return args
 
 
 def _format_column_multilabels(row, label_list, label_delim, other_label_name="other"):
+    # Format dataframe label column
     multilabel = []
     for label in label_list:
         if row[label]:
@@ -63,7 +63,9 @@ def _format_column_multilabels(row, label_list, label_delim, other_label_name="o
         result = label_delim.join(multilabel)
     return result
 
+
 def download_file(bucket_name, source_blob_name, destination_file_name):
+    # Download files from GCS
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(source_blob_name)
@@ -74,7 +76,9 @@ def download_file(bucket_name, source_blob_name, destination_file_name):
         )
     )
 
+
 def update_classif_config(config):
+    # Update LM config file to be used to create a classifier
     config_lm = config.copy()
     clf_config = awd_qrnn_clas_config.copy()
     keys_to_remove = set(config_lm.keys()) - set(clf_config.keys())
@@ -84,15 +88,22 @@ def update_classif_config(config):
     return clf_config
 
 
-def finetune():
-    hpt = hypertune.HyperTune()
-    hpt.report_hyperparameter_tuning_metric(
-        hyperparameter_metric_tag='valid_loss',
-        metric_value="TBM",
-        global_step="TBM")
+def fit_with_gradual_unfreezing(learner, epochs, lr):
+    learner.fit_one_cycle(epochs,
+                          lr_max = slice(lr),
+                          cbs=[ShowGraphCallback(),
+                               SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
+    learner.load("bestmodel")
+    learner.unfreeze()
+    learner.fit_one_cycle(epochs,
+                          cbs=[ShowGraphCallback(),
+                               SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
+    learner.load("bestmodel")
+    return learner
 
 
 def train_lm(train_df, config, args):
+    # Function to fine-tune the pre-trained language model
     blocks = TextBlock.from_df("text_clean",
                                is_lm=True)
 
@@ -113,30 +124,14 @@ def train_lm(train_df, config, args):
                                     path=".",
                                     pretrained_fnames=pretrained_filenames)
 
-    learner_lm = language_model_learner(lm_dataloaders,
-                                    AWD_QRNN,
-                                    config=config,
-                                    pretrained=True,
-                                    path=".",
-                                    pretrained_fnames=pretrained_filenames)
-
     lr, _ = learner_lm.lr_find(suggestions=True)
-
-    learner_lm.fit_one_cycle(args.epochs,
-                         lr_max = slice(lr),
-                         cbs=[ShowGraphCallback(),
-                              SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
-    learner_lm.load("bestmodel")
-    learner_lm.unfreeze()
-    learner_lm.fit_one_cycle(args.epochs,
-                         cbs=[ShowGraphCallback(),
-                              SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
-    learner_lm.load("bestmodel")
+    learner_lm = fit_with_gradual_unfreezing(learner_lm, args.epochs, lr)
     learner_lm.save_encoder("encoder")
     return lm_dataloaders
 
 
 def train_classifier(train_df, lm_dls, config, args):
+    # Train a classifier using LM
     blocks = (TextBlock.from_df("text_clean",
                                 seq_len=lm_dls.seq_len,
                                 vocab=lm_dls.vocab),
@@ -154,26 +149,17 @@ def train_classifier(train_df, lm_dls, config, args):
     config_cls = update_classif_config(config)
 
     learner_clf = text_classifier_learner(clf_dataloaders,
-                                      AWD_QRNN,
-                                      path=clf_dataloaders.path,
-                                      drop_mult=0.3,
-                                      config=config_cls)
+                                          AWD_QRNN,
+                                          path=clf_dataloaders.path,
+                                          drop_mult=0.3,
+                                          config=config_cls)
     learner_clf.load_encoder("encoder")
     lr, _ = learner_clf.lr_find(suggestions=True)
 
-    learner_clf.fit_one_cycle(args.epochs,
-                              lr_max = slice(lr),
-                              cbs=[ShowGraphCallback(),
-                                   SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
-    learner_clf.load("bestmodel")
-    learner_clf.unfreeze()
-    learner_clf.fit_one_cycle(args.epochs,
-                              lr_max = slice(lr),
-                              cbs=[ShowGraphCallback(),
-                                   SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
-    learner_clf.load("bestmodel")
+    learner_clf = fit_with_gradual_unfreezing(learner_clf, args.epochs, lr)
     learner_clf.export(MODEL_FILE_NAME)
 
+    # Upload model to GCS if a directory is specified
     if args.model_dir:
         subprocess.check_call([
             'gsutil', 'cp', MODEL_FILE_NAME,
@@ -181,22 +167,35 @@ def train_classifier(train_df, lm_dls, config, args):
 
 
 def train_model():
+    # Define variables values
+    MODEL_FILE_NAME = 'fastai_model.pth'
+    RANDOM_STATE = 42
+    VAL_SIZE = 0.2
+    TEST_SIZE = 0.25
     args = get_args()
+
+    # Download necessary files
     download_file("sacha-aiplatform", "pretrained/labelled_dataset_10k.csv", "trainer/labelled_dataset.csv")
     download_file("sacha-aiplatform", "pretrained/vocab.pkl", "models/vocab.pkl")
     download_file("sacha-aiplatform", "pretrained/config.json", "trainer/config.json")
     download_file("sacha-aiplatform", "pretrained/weights.pth", "models/weights.pth")
+
+    # Format dataframe for training
     df = pd.read_csv("trainer/labelled_dataset.csv")
     df.loc[:, "labels"] = df.apply(_format_column_multilabels, args=(["skincare", "makeup"], ","), axis=1)
-
     train_df, test_df = train_test_split(df.dropna(), test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
+    # Open json config file
     with open("trainer/config.json", "r") as config_file:
         config = json.load(config_file)
         config.pop("qrnn")
 
+    # Fine-tune language model
     lm_dls = train_lm(train_df, config, args)
+
+    # Create and train classifier
     train_classifier(train_df, lm_dls, config, args)
+
 
 if __name__ == '__main__':
   train_model()
