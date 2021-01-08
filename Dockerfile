@@ -1,4 +1,4 @@
-# Initializing image
+# Dockerfile
 FROM nvidia/cuda:10.1-devel
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,6 +13,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 install pip==20.3.1
 
 WORKDIR /root
+
+# Create directories to contain code and downloaded model from GCS
+RUN mkdir /root/trainer
+
+RUN mkdir /root/models
+
+# Copy requirements
+COPY requirements.txt /root/requirements.txt
+
+# Install pytorch
+RUN pip3 install torch==1.7.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
 
 # Install requirements
 RUN pip3 install -r requirements.txt
@@ -41,15 +52,10 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
-# Create directories to contain code and downloaded model from GCS
-RUN mkdir /root/trainer
-
-RUN mkdir /root/models
-
-COPY trainer/fastai_test.py /root/trainer/fastai_test.py
+COPY trainer/fastai_train.py /root/trainer/fastai_train.py
 
 # Authentificate to GCP
 CMD gcloud auth login
 
 # Sets up the entry point to invoke the trainer.
-ENTRYPOINT ["python3",  "trainer/fastai_test.py"]
+ENTRYPOINT ["python3",  "trainer/fastai_train.py"]

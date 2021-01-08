@@ -2,10 +2,8 @@ import pandas as pd
 import json
 import os
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score
 import argparse
 import subprocess
-import hypertune
 from fastai.callback.progress import ShowGraphCallback
 from fastai.callback.tracker import SaveModelCallback
 from fastai.data.block import MultiCategoryBlock, DataBlock
@@ -18,37 +16,37 @@ from fastai.learner import load_learner
 import torch
 from google.cloud import storage
 
-print(torch.cuda.is_available())
-
+# Define variables values
 MODEL_FILE_NAME = 'fastai_model.pth'
 RANDOM_STATE = 42
 VAL_SIZE = 0.2
 TEST_SIZE = 0.25
 
+
 def get_args():
-  """Argument parser.
-  Returns:
-    Dictionary of arguments.
-  """
-  parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-  parser.add_argument(
-      '--batch-size',
-      type=int,
-      default=16,
-      metavar='N',
-      help='input batch size for training (default: 64)')
-  parser.add_argument(
-      '--epochs',
-      type=int,
-      default=1,
-      metavar='N',
-      help='number of epochs to train (default: 10)')
-  parser.add_argument(
-      '--model-dir',
-      default=None,
-      help='The directory to store the model')
-  args = parser.parse_args()
-  return args
+    """Argument parser.
+    Returns:
+      Dictionary of arguments.
+    """
+    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    parser.add_argument(
+        '--batch-size',
+        type=int,
+        default=16,
+        metavar='N',
+        help='input batch size for training (default: 64)')
+    parser.add_argument(
+        '--epochs',
+        type=int,
+        default=1,
+        metavar='N',
+        help='number of epochs to train (default: 10)')
+    parser.add_argument(
+        '--model-dir',
+        default=None,
+        help='The directory to store the model')
+    args = parser.parse_args()
+    return args
 
 
 def _format_column_multilabels(row, label_list, label_delim, other_label_name="other"):
@@ -198,4 +196,8 @@ def train_model():
 
 
 if __name__ == '__main__':
-  train_model()
+    # Ensure CUDA is enabled
+    print(torch.cuda.is_available())
+
+    # Launch training of the model
+    train_model()
