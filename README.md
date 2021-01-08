@@ -61,7 +61,7 @@ The image is built based on Nvidia Cuda 10.1-devel image, which should automatic
 You’ll get a success message if the image is built correctly, or an error message otherwise. Be really careful at the python, pip, pytorch and nvidia version you choose, because incompatibilities will cause the package you want to install to fail without any specific reason
 
 
-## Run image to see everything is ok
+## Run image before pushing to ensure its well-behavior
 Once your image is built, you can run the container to see if everything works (especially cuda)
 Permission to upload to GCS may be denied (403), but should work when doing it with AIP, so no worries if it's the only thing that causes errors
 > ```python
