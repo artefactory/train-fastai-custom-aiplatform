@@ -64,11 +64,10 @@ Create a bucket on GCS and upload your files in it
 - Run AI Platform job
 > ```python
 > gcloud ai-platform jobs submit training $JOB_NAME \
-  --scale-tier BASIC_GPU \
-  --region $REGION \
-  --master-image-uri $IMAGE_URI \
-  -- \
-  --epochs=5 \
-  --model-dir=gs://$BUCKET_NAME/$MODEL_DIR
-
+> --scale-tier BASIC_GPU \
+> --region $REGION \
+> --master-image-uri $IMAGE_URI \
+> -- \
+> --epochs=5 \
+> --model-dir=gs://$BUCKET_NAME/$MODEL_DIR
 > ```
