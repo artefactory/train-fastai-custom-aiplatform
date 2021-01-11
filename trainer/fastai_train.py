@@ -86,7 +86,8 @@ def train_lm(train_df, config, args):
                                         path=LM_MODEL_PATH,
                                         pretrained_fnames=pretrained_filenames)
 
-    find_best_lr(learner_lm)
+    lr = find_best_lr(learner_lm)
+
     learner_lm = fit_with_gradual_unfreezing(learner_lm, args.epochs, lr)
     learner_lm.save_encoder("encoder")
     return lm_dataloaders
@@ -121,7 +122,7 @@ def train_classifier(train_df, lm_dls, config, args):
                                           config=config_cls)
     learner_clf.load_encoder("encoder")
 
-    find_best_lr(learner_clf)
+    lr = find_best_lr(learner_clf)
 
     learner_clf = fit_with_gradual_unfreezing(learner_clf, args.epochs, lr)
     learner_clf.export(MODEL_FILE_NAME)
