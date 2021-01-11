@@ -110,3 +110,7 @@ This might take some time depending on how many epochs you chose to train your m
 > ```
 
 Once the job is complete, your model will be available in your bucket, in the folder $MODEL_DIR
+
+# References
+- [Getting started with AI Platform Training with custom containers](https://cloud.google.com/ai-platform/training/docs/custom-containers-training#submit_a_hyperparameter_tuning_job)
+- [Use the GPU within a Docker container](https://blog.roboflow.com/use-the-gpu-in-docker/)
