@@ -2,11 +2,10 @@ import pandas as pd
 import json
 import os
 from sklearn.model_selection import train_test_split
-import argparse
-import subprocess
+
 from fastai.callback.progress import ShowGraphCallback
 from fastai.callback.tracker import SaveModelCallback
-from fastai.data.block import MultiCategoryBlock, DataBlock
+from fastai.data.block import MultiCategoryBlock, CategoryBlock, DataBlock
 from fastai.data.transforms import ColReader, RandomSplitter
 from fastai.metrics import Perplexity, accuracy, error_rate
 from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config, awd_lstm_lm_config, awd_qrnn_clas_config)
@@ -14,42 +13,13 @@ from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
 from fastai.learner import load_learner
 import torch
-from google.cloud import storage
 
-from config import (DATASET_GCS_PATH, VOCAB_GCS_PATH, CONFIG_GCS_PATH, WEIGHTS_GCS_PATH, MODELS_LOCAL_FOLDER, TRAINER_LOCAL_FOLDER,
+from fastai_config import (DATASET_GCS_PATH, VOCAB_GCS_PATH, CONFIG_GCS_PATH, WEIGHTS_GCS_PATH, MODELS_LOCAL_FOLDER, TRAINER_LOCAL_FOLDER,
                     DATASET_LOCAL_PATH, VOCAB_LOCAL_PATH, CONFIG_LOCAL_PATH, WEIGHTS_LOCAL_PATH, RANDOM_STATE, VAL_SIZE, TEST_SIZE,
                     TEXT_COL_NAME, LABEL_COL_NAME, LABEL_LIST, OTHER_LABEL_NAME, LANGUAGE, BESTMODEL_NAME, MODEL_FILE_NAME, LABEL_DELIM,
-                    WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE, DROP_MULT, LM_MODEL_PATH, METRIC_TO_MONITOR, BESTMODEL_NAME)
+                    WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE, DROP_MULT, LM_MODEL_PATH, METRIC_TO_MONITOR, BESTMODEL_NAME, LANGUAGE, MULTICATEGORY)
 
-def get_args():
-    """Argument parser.
-    Returns:
-      Dictionary of arguments.
-    """
-    parser = argparse.ArgumentParser(description='Arguments to train the model')
-    parser.add_argument(
-        '--batch-size',
-        type=int,
-        default=16,
-        metavar='N',
-        help='input batch size for training (default: 16)')
-    parser.add_argument(
-        '--epochs',
-        type=int,
-        default=1,
-        metavar='N',
-        help='number of epochs to train (default: 1)')
-    parser.add_argument(
-        '--bucket-name',
-        default=None,
-        help='The name of your bucket  in your GCP project')
-    parser.add_argument(
-        '--model-dir',
-        default=None,
-        help='The directory to store the model')
-    args = parser.parse_args()
-    return args
-
+from gcs_utils import download_file_from_gcs
 
 def _format_column_multilabels(row, label_list, label_delim, other_label_name=OTHER_LABEL_NAME):
     # Format dataframe label column
@@ -62,19 +32,6 @@ def _format_column_multilabels(row, label_list, label_delim, other_label_name=OT
     else:
         result = label_delim.join(multilabel)
     return result
-
-
-def download_file(bucket_name, source_blob_name, destination_file_name):
-    # Download files from GCS
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(source_blob_name)
-    blob.download_to_filename(destination_file_name)
-    print(
-        "Blob {} downloaded to {}.".format(
-            source_blob_name, destination_file_name
-        )
-    )
 
 
 def update_classif_config(config):
@@ -102,6 +59,11 @@ def fit_with_gradual_unfreezing(learner, epochs, lr):
     return learner
 
 
+def find_best_lr(learner):
+    lr, _ = learner.lr_find(suggestions=True)
+    return lr
+
+
 def train_lm(train_df, config, args):
     # Function to fine-tune the pre-trained language model
     blocks = TextBlock.from_df(TEXT_COL_NAME,
@@ -124,18 +86,22 @@ def train_lm(train_df, config, args):
                                         path=LM_MODEL_PATH,
                                         pretrained_fnames=pretrained_filenames)
 
-    lr, _ = learner_lm.lr_find(suggestions=True)
+    find_best_lr(learner_lm)
     learner_lm = fit_with_gradual_unfreezing(learner_lm, args.epochs, lr)
     learner_lm.save_encoder("encoder")
     return lm_dataloaders
 
 
 def train_classifier(train_df, lm_dls, config, args):
-    # Train a classifier using LM
+    if MULTICATEGORY:
+        block_category = MultiCategoryBlock()
+    else:
+        block_category = CategoryBlock()
+
     blocks = (TextBlock.from_df(TEXT_COL_NAME,
                                 seq_len=lm_dls.seq_len,
                                 vocab=lm_dls.vocab),
-              MultiCategoryBlock())
+              block_category)
 
     clf_datablock = DataBlock(blocks=blocks,
                               get_x=ColReader("text"),
@@ -154,27 +120,24 @@ def train_classifier(train_df, lm_dls, config, args):
                                           drop_mult=DROP_MULT,
                                           config=config_cls)
     learner_clf.load_encoder("encoder")
-    lr, _ = learner_clf.lr_find(suggestions=True)
+
+    find_best_lr(learner_clf)
 
     learner_clf = fit_with_gradual_unfreezing(learner_clf, args.epochs, lr)
     learner_clf.export(MODEL_FILE_NAME)
 
-    # Upload model to GCS if a directory is specified
-    if args.model_dir:
-        subprocess.check_call([
-            'gsutil', 'cp', MODEL_FILE_NAME,
-            os.path.join(f'gs://{args.bucket_name}', args.model_dir, MODEL_FILE_NAME)])
+    return MODEL_FILE_NAME
 
 
-def train_model():
-    # Import args
-    args = get_args()
+def train_fastai_model(args):
+    # Ensure CUDA is enabled
+    print(torch.cuda.is_available())
 
     # Download necessary files
-    download_file(args.bucket_name, DATASET_GCS_PATH, DATASET_LOCAL_PATH)
-    download_file(args.bucket_name, VOCAB_GCS_PATH, VOCAB_LOCAL_PATH)
-    download_file(args.bucket_name, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH)
-    download_file(args.bucket_name, WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH)
+    download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH, DATASET_LOCAL_PATH)
+    download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH, VOCAB_LOCAL_PATH)
+    download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH)
+    download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH)
 
     # Format dataframe for training
     df = pd.read_csv(DATASET_LOCAL_PATH)
@@ -190,12 +153,6 @@ def train_model():
     lm_dls = train_lm(train_df, config, args)
 
     # Create and train classifier
-    train_classifier(train_df, lm_dls, config, args)
+    model_file_name = train_classifier(train_df, lm_dls, config, args)
 
-
-if __name__ == '__main__':
-    # Ensure CUDA is enabled
-    print(torch.cuda.is_available())
-
-    # Launch training of the model
-    train_model()
+    return model_file_name

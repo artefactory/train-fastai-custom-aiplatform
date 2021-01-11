@@ -48,12 +48,17 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
+# Copy necessary files
 COPY trainer/fastai_train.py /root/trainer/fastai_train.py
 
-COPY trainer/config.py /root/trainer/config.py
+COPY trainer/fastai_config.py /root/trainer/fastai_config.py
+
+COPY trainer/gcs_utils.py /root/trainer/gcs_utils.py
+
+COPY trainer/training_workflow.py /root/trainer/training_workflow.py
 
 # Authentificate to GCP
 CMD gcloud auth login
 
 # Sets up the entry point to invoke the trainer.
-ENTRYPOINT ["python3",  "trainer/fastai_train.py"]
+ENTRYPOINT ["python3",  "trainer/training_workflow.py"]

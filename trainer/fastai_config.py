@@ -1,5 +1,7 @@
 import os
 
+## Filepaths and filenames ##
+
 # GCS File paths
 DATASET_GCS_PATH = "pretrained/labelled_dataset_10k.csv"
 VOCAB_GCS_PATH = "pretrained/vocab.pkl"
@@ -18,12 +20,13 @@ WEIGHTS_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, "weights.pth")
 WEIGHTS_PRETRAINED_FILE = "weights"
 VOCAB_PRETRAINED_FILE = "vocab"
 
-# Variables of train/test split
-RANDOM_STATE = 42
-VAL_SIZE = 0.2
-TEST_SIZE = 0.25
+# Trained model filename
+MODEL_FILE_NAME = "fastai_model.pth"
 
-# Informations on the DataFrame
+
+## Model customization ##
+
+# Information on the DataFrame
 TEXT_COL_NAME = "text_clean"
 LABEL_COL_NAME = "labels"
 LABEL_DELIM = ","
@@ -36,9 +39,15 @@ BESTMODEL_NAME = "bestmodel"
 METRIC_TO_MONITOR = "valid_loss"
 LM_MODEL_PATH = "."
 DROP_MULT = 0.3
+MULTICATEGORY = True
+LANGUAGE = 'fr'
 
-# Trained model filename
-MODEL_FILE_NAME = "fastai_model.pth"
+# Variables of train/test split
+RANDOM_STATE = 42
+VAL_SIZE = 0.2
+TEST_SIZE = 0.25
+
+
 
 
 
