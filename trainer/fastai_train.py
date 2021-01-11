@@ -16,12 +16,10 @@ from fastai.learner import load_learner
 import torch
 from google.cloud import storage
 
-# Define global variables
-MODEL_FILE_NAME = 'fastai_model.pth'
-RANDOM_STATE = 42
-VAL_SIZE = 0.2
-TEST_SIZE = 0.25
-
+from config import (DATASET_GCS_PATH, VOCAB_GCS_PATH, CONFIG_GCS_PATH, WEIGHTS_GCS_PATH, MODELS_LOCAL_FOLDER, TRAINER_LOCAL_FOLDER,
+                    DATASET_LOCAL_PATH, VOCAB_LOCAL_PATH, CONFIG_LOCAL_PATH, WEIGHTS_LOCAL_PATH, RANDOM_STATE, VAL_SIZE, TEST_SIZE,
+                    TEXT_COL_NAME, LABEL_COL_NAME, LABEL_LIST, OTHER_LABEL_NAME, LANGUAGE, BESTMODEL_NAME, MODEL_FILE_NAME, LABEL_DELIM,
+                    WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE, DROP_MULT, LM_MODEL_PATH, METRIC_TO_MONITOR, BESTMODEL_NAME)
 
 def get_args():
     """Argument parser.
@@ -53,7 +51,7 @@ def get_args():
     return args
 
 
-def _format_column_multilabels(row, label_list, label_delim, other_label_name="other"):
+def _format_column_multilabels(row, label_list, label_delim, other_label_name=OTHER_LABEL_NAME):
     # Format dataframe label column
     multilabel = []
     for label in label_list:
@@ -94,19 +92,19 @@ def fit_with_gradual_unfreezing(learner, epochs, lr):
     learner.fit_one_cycle(epochs,
                           lr_max = slice(lr),
                           cbs=[ShowGraphCallback(),
-                               SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
-    learner.load("bestmodel")
+                               SaveModelCallback(monitor=METRIC_TO_MONITOR, fname=BESTMODEL_NAME)])
+    learner.load(BESTMODEL_NAME)
     learner.unfreeze()
     learner.fit_one_cycle(epochs,
                           cbs=[ShowGraphCallback(),
-                               SaveModelCallback(monitor="valid_loss", fname="bestmodel")])
-    learner.load("bestmodel")
+                               SaveModelCallback(monitor=METRIC_TO_MONITOR, fname=BESTMODEL_NAME)])
+    learner.load(BESTMODEL_NAME)
     return learner
 
 
 def train_lm(train_df, config, args):
     # Function to fine-tune the pre-trained language model
-    blocks = TextBlock.from_df("text_clean",
+    blocks = TextBlock.from_df(TEXT_COL_NAME,
                                is_lm=True)
 
     data_block = DataBlock(blocks=blocks,
@@ -117,14 +115,14 @@ def train_lm(train_df, config, args):
                                          bs=args.batch_size,
                                          backwards = True)
 
-    pretrained_filenames = ["weights", "vocab"]
+    pretrained_filenames = [WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE]
 
     learner_lm = language_model_learner(lm_dataloaders,
-                                    AWD_QRNN,
-                                    config=config,
-                                    pretrained=True,
-                                    path=".",
-                                    pretrained_fnames=pretrained_filenames)
+                                        AWD_QRNN,
+                                        config=config,
+                                        pretrained=True,
+                                        path=LM_MODEL_PATH,
+                                        pretrained_fnames=pretrained_filenames)
 
     lr, _ = learner_lm.lr_find(suggestions=True)
     learner_lm = fit_with_gradual_unfreezing(learner_lm, args.epochs, lr)
@@ -134,14 +132,14 @@ def train_lm(train_df, config, args):
 
 def train_classifier(train_df, lm_dls, config, args):
     # Train a classifier using LM
-    blocks = (TextBlock.from_df("text_clean",
+    blocks = (TextBlock.from_df(TEXT_COL_NAME,
                                 seq_len=lm_dls.seq_len,
                                 vocab=lm_dls.vocab),
               MultiCategoryBlock())
 
     clf_datablock = DataBlock(blocks=blocks,
                               get_x=ColReader("text"),
-                              get_y=ColReader("labels", label_delim=","),
+                              get_y=ColReader(LABEL_COL_NAME, label_delim=LABEL_DELIM),
                               splitter=RandomSplitter(valid_pct=VAL_SIZE, seed=RANDOM_STATE)
                               )
 
@@ -153,7 +151,7 @@ def train_classifier(train_df, lm_dls, config, args):
     learner_clf = text_classifier_learner(clf_dataloaders,
                                           AWD_QRNN,
                                           path=clf_dataloaders.path,
-                                          drop_mult=0.3,
+                                          drop_mult=DROP_MULT,
                                           config=config_cls)
     learner_clf.load_encoder("encoder")
     lr, _ = learner_clf.lr_find(suggestions=True)
@@ -173,18 +171,18 @@ def train_model():
     args = get_args()
 
     # Download necessary files
-    download_file(args.bucket_name, "pretrained/labelled_dataset_10k.csv", "trainer/labelled_dataset.csv")
-    download_file(args.bucket_name, "pretrained/vocab.pkl", "models/vocab.pkl")
-    download_file(args.bucket_name, "pretrained/config.json", "trainer/config.json")
-    download_file(args.bucket_name, "pretrained/weights.pth", "models/weights.pth")
+    download_file(args.bucket_name, DATASET_GCS_PATH, DATASET_LOCAL_PATH)
+    download_file(args.bucket_name, VOCAB_GCS_PATH, VOCAB_LOCAL_PATH)
+    download_file(args.bucket_name, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH)
+    download_file(args.bucket_name, WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH)
 
     # Format dataframe for training
-    df = pd.read_csv("trainer/labelled_dataset.csv")
-    df.loc[:, "labels"] = df.apply(_format_column_multilabels, args=(["skincare", "makeup"], ","), axis=1)
+    df = pd.read_csv(DATASET_LOCAL_PATH)
+    df.loc[:, LABEL_COL_NAME] = df.apply(_format_column_multilabels, args=(LABEL_LIST, LABEL_DELIM), axis=1)
     train_df, test_df = train_test_split(df.dropna(), test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Open json config file
-    with open("trainer/config.json", "r") as config_file:
+    with open(CONFIG_LOCAL_PATH, "r") as config_file:
         config = json.load(config_file)
         config.pop("qrnn")
 

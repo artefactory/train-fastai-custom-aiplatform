@@ -50,6 +50,8 @@ RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
 COPY trainer/fastai_train.py /root/trainer/fastai_train.py
 
+COPY trainer/config.py /root/trainer/config.py
+
 # Authentificate to GCP
 CMD gcloud auth login
 
