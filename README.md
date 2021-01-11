@@ -5,7 +5,8 @@
 - [Train the model](#train-the-model)
 
 # Introduction
-Explanation of AI Platform and what we're going to do
+AI Platform is a fully-managed cost-effective service provided by Google Cloud Platform, allowing users to train, deploy and use ML models directly on cloud. 
+We'll see in this repo how to setup AI Platform for ML models training, and how to automatically train models using any framework we want.
 
 # Pre-requisites
 To follow this tutorial, be sure to have in possession the following elements:
@@ -36,14 +37,14 @@ The first thing you’ll have to do will be to setup your working environment. H
   - REGION: The region you operate in (choose one with GPUs available, for Europe its europe-west1 usually)
   - IMAGE_REPO_NAME: The name of the folder where will be stored your containers in Container Registry, I chose "fastai_gpu_container"
   - IMAGE_TAG: The tag name you want to give to your future container
-  - IMAGE_URI: The URI to your future container, defined by:
+  - IMAGE_URI: The URI to your future container:
   > ```python
   > export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
   > ```
   - MODEL_DIR: The directory in your bucket that will store your trained model (e.g "models")
   - JOB_NAME: AI Platform job name
 
-- Create a bucket on GCS and upload your files in it, following the same architecture than in this drive:
+- Create a bucket on GCS with the same architecture as in the following drive, and upload your files in it:
   https://drive.google.com/drive/folders/1JHfan6SFOXz5X0h49GOdORQQI3-rjpJX?usp=sharing
 
 
@@ -62,7 +63,7 @@ You’ll get a success message if the image is built correctly, or an error mess
 
 
 ## Run image before pushing to ensure its well-behavior
-Once your image is built, you can run the container to see if everything works (especially cuda)
+Once your image is built, you can run the container to see if everything works (especially cuda).
 Permission to upload to GCS may be denied (403), but should work when doing it with AIP, so no worries if it's the only thing that causes errors
 > ```python
 > docker run --runtime=nvidia $IMAGE_URI --epochs 2 --bucket-name $BUCKET_NAME
@@ -70,7 +71,7 @@ Permission to upload to GCS may be denied (403), but should work when doing it w
 Don't forget to specify that you want to run on GPU (nvidia runtime), and the number of epochs to train your model on
 
 ## Push your container
-When you made sure that everything worked, you can push your image to GCR using the following command:
+After running the image and ensured it worked, you can push it to GCR using the following command:
 > ```python
 > docker push $IMAGE_URI
 > ```
