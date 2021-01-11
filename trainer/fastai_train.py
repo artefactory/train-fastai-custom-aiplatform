@@ -1,25 +1,33 @@
-import pandas as pd
 import json
 import os
-from sklearn.model_selection import train_test_split
 
+import pandas as pd
+import torch
 from fastai.callback.progress import ShowGraphCallback
 from fastai.callback.tracker import SaveModelCallback
-from fastai.data.block import MultiCategoryBlock, CategoryBlock, DataBlock
+from fastai.data.block import CategoryBlock, DataBlock, MultiCategoryBlock
 from fastai.data.transforms import ColReader, RandomSplitter
+from fastai.learner import load_learner
 from fastai.metrics import Perplexity, accuracy, error_rate
-from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config, awd_lstm_lm_config, awd_qrnn_clas_config)
+from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config,
+                             awd_lstm_lm_config, awd_qrnn_clas_config)
 from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
-from fastai.learner import load_learner
-import torch
+from sklearn.model_selection import train_test_split
 
-from fastai_config import (DATASET_GCS_PATH, VOCAB_GCS_PATH, CONFIG_GCS_PATH, WEIGHTS_GCS_PATH, MODELS_LOCAL_FOLDER, TRAINER_LOCAL_FOLDER,
-                    DATASET_LOCAL_PATH, VOCAB_LOCAL_PATH, CONFIG_LOCAL_PATH, WEIGHTS_LOCAL_PATH, RANDOM_STATE, VAL_SIZE, TEST_SIZE,
-                    TEXT_COL_NAME, LABEL_COL_NAME, LABEL_LIST, OTHER_LABEL_NAME, LANGUAGE, BESTMODEL_NAME, MODEL_FILE_NAME, LABEL_DELIM,
-                    WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE, DROP_MULT, LM_MODEL_PATH, METRIC_TO_MONITOR, BESTMODEL_NAME, LANGUAGE, MULTICATEGORY)
-
+from fastai_config import (BESTMODEL_NAME, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH,
+                           DATASET_GCS_PATH, DATASET_LOCAL_PATH, DROP_MULT,
+                           ENCODER_FILE_NAME, LABEL_COL_NAME, LABEL_DELIM,
+                           LABEL_LIST, LANGUAGE, LM_MODEL_PATH,
+                           METRIC_TO_MONITOR, MODEL_FILE_NAME,
+                           MODELS_LOCAL_FOLDER, MULTICATEGORY,
+                           OTHER_LABEL_NAME, RANDOM_STATE, TEST_SIZE,
+                           TEXT_COL_NAME, TRAINER_LOCAL_FOLDER, VAL_SIZE,
+                           VOCAB_GCS_PATH, VOCAB_LOCAL_PATH,
+                           VOCAB_PRETRAINED_FILE, WEIGHTS_GCS_PATH,
+                           WEIGHTS_LOCAL_PATH, WEIGHTS_PRETRAINED_FILE)
 from gcs_utils import download_file_from_gcs
+
 
 def _format_column_multilabels(row, label_list, label_delim, other_label_name=OTHER_LABEL_NAME):
     # Format dataframe label column
@@ -89,12 +97,13 @@ def train_lm(train_df, config, args):
     lr = find_best_lr(learner_lm)
 
     learner_lm = fit_with_gradual_unfreezing(learner_lm, args.epochs, lr)
-    learner_lm.save_encoder("encoder")
+    learner_lm.save_encoder(ENCODER_FILE_NAME)
     return lm_dataloaders
 
 
 def train_classifier(train_df, lm_dls, config, args):
-    if MULTICATEGORY:
+    # Train the classifier using the previously fine-tuned LM
+    if len(LABEL_LIST) > 1:
         block_category = MultiCategoryBlock()
     else:
         block_category = CategoryBlock()
@@ -120,7 +129,7 @@ def train_classifier(train_df, lm_dls, config, args):
                                           path=clf_dataloaders.path,
                                           drop_mult=DROP_MULT,
                                           config=config_cls)
-    learner_clf.load_encoder("encoder")
+    learner_clf.load_encoder(ENCODER_FILE_NAME)
 
     lr = find_best_lr(learner_clf)
 

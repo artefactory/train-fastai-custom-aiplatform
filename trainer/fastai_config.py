@@ -21,6 +21,9 @@ WEIGHTS_PRETRAINED_FILE = "weights"
 VOCAB_PRETRAINED_FILE = "vocab"
 
 # Trained model filename
+LM_MODEL_PATH = "."
+BESTMODEL_NAME = "bestmodel"
+ENCODER_FILE_NAME = "encoder"
 MODEL_FILE_NAME = "fastai_model.pth"
 
 
@@ -34,12 +37,8 @@ LABEL_LIST = ["skincare", "makeup"]
 OTHER_LABEL_NAME = "other"
 
 # Model parameters
-LANGUAGE = "fr"
-BESTMODEL_NAME = "bestmodel"
 METRIC_TO_MONITOR = "valid_loss"
-LM_MODEL_PATH = "."
 DROP_MULT = 0.3
-MULTICATEGORY = True
 LANGUAGE = 'fr'
 
 # Variables of train/test split
