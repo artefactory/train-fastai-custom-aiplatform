@@ -8,7 +8,7 @@ from fastai.callback.tracker import SaveModelCallback
 from fastai.data.block import MultiCategoryBlock, CategoryBlock, DataBlock
 from fastai.data.transforms import ColReader, RandomSplitter
 from fastai.metrics import Perplexity, accuracy, error_rate
-from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config, awd_lstm_lm_config, awd_qrnn_clas_config)
+from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config, awd_qrnn_lm_config, awd_qrnn_clas_config)
 from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
 from fastai.learner import load_learner
@@ -45,7 +45,7 @@ def update_classif_config(config):
     return clf_config
 
 
-def fit_with_gradual_unfreezing(learner, epochs, lr):
+def fit_with_gradual_unfreezing(learner, epochs, lr, cycles):
     learner.fit_one_cycle(epochs,
                           lr_max = slice(lr),
                           cbs=[ShowGraphCallback(),
@@ -123,22 +123,31 @@ def train_classifier(train_df, lm_dls, config, args):
     learner_clf.load_encoder("encoder")
 
     lr = find_best_lr(learner_clf)
-
     learner_clf = fit_with_gradual_unfreezing(learner_clf, args.epochs, lr)
     learner_clf.export(MODEL_FILE_NAME)
-
     return MODEL_FILE_NAME
+
+
+def open_config_file(language, config_local_path=None):
+    if language == "en" or config_local_path is None:
+        config = awd_qrnn_lm_config.copy()
+    else:
+        with open(config_local_path, "r") as config_file:
+            config = json.load(config_file)
+            config.pop("qrnn")
+    return config
 
 
 def train_fastai_model(args):
     # Ensure CUDA is enabled
     print(torch.cuda.is_available())
 
-    # Download necessary files
+    # Download necessary files (for english language, only the labelled dataset is necessary)
     download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH, DATASET_LOCAL_PATH)
-    download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH, VOCAB_LOCAL_PATH)
-    download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH)
-    download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH)
+    if LANGUAGE != 'en':
+        download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH, VOCAB_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH)
 
     # Format dataframe for training
     df = pd.read_csv(DATASET_LOCAL_PATH)
@@ -146,9 +155,7 @@ def train_fastai_model(args):
     train_df, test_df = train_test_split(df.dropna(), test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Open json config file
-    with open(CONFIG_LOCAL_PATH, "r") as config_file:
-        config = json.load(config_file)
-        config.pop("qrnn")
+    config = open_config_file(LANGUAGE, CONFIG_LOCAL_PATH)
 
     # Fine-tune language model
     lm_dls = train_lm(train_df, config, args)
