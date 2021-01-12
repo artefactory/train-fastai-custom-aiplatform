@@ -140,7 +140,7 @@ This might take some time depending on how many epochs you chose to train your m
 > gcloud ai-platform jobs describe $JOB_NAME
 > ```
 
-Once the job is complete, your model will be available in your bucket, in the folder $MODEL_DIR
+Once the job is complete, your model will be available in your bucket, in the folder $MODEL_DIR, along with a JSON file containing the Accuracy, Precision and Recall of the model for every label.
 
 # References
 - [Getting started with AI Platform Training with custom containers](https://cloud.google.com/ai-platform/training/docs/custom-containers-training#submit_a_hyperparameter_tuning_job)
