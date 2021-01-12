@@ -86,12 +86,17 @@ def train_lm(train_df, config, args):
                                              bs=args.batch_size,
                                              backwards = True)
 
-    pretrained_filenames = [WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE]
+    if args.lang =='en':
+        is_pretrained = False
+        pretrained_filenames = None
+    else:
+        is_pretrained = True
+        pretrained_filenames = [WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE]
 
     learner_lm = language_model_learner(lm_dataloaders,
                                         AWD_QRNN,
                                         config=config,
-                                        pretrained=True,
+                                        pretrained=is_pretrained,
                                         path=LM_MODEL_PATH,
                                         pretrained_fnames=pretrained_filenames)
 
