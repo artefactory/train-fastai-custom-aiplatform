@@ -162,15 +162,16 @@ def train_classifier(train_df, lm_dls, config, args):
 def assess_classifier_performances(learner, test_df, prediction_threshold, label_list, label_delim):
     # Assess model performances for each label (Accuracy, Precision and Recall)
     test_dataloader = learner.dls.test_dl(test_df)
-    prediction_result, _ = learner_clf.get_preds(dl=test_dataloader)
-    classes = learner_clf.dls.vocab[1]
+    prediction_result, _ = learner.get_preds(dl=test_dataloader)
+    classes = learner.dls.vocab[1]
     test_df.loc[:, PREDICTION_COL_NAME] = [
-        label_delim.join(classes[tensor > prediction_threshold]) for tensor in prediction_result].apply(
-            lambda x: OTHER_LABEL_NAME if x=="" else x)
+        label_delim.join(classes[tensor > prediction_threshold]) for tensor in prediction_result]
+    test_df.loc[:, PREDICTION_COL_NAME] = test_df.loc[:, PREDICTION_COL_NAME].apply(
+        lambda x: OTHER_LABEL_NAME if x=="" else x)
     label_scores = dict()
     for label in label_list:
         test_df.loc[:, f"{label}_predicted"] = test_df.loc[:, PREDICTION_COL_NAME].apply(lambda x: float(label in x))
-        label_scores(label) = {"Accuracy": accuracy_score(test_df[label], test_df[f"{label}_predicted"]),
+        label_scores[label] = {"Accuracy": accuracy_score(test_df[label], test_df[f"{label}_predicted"]),
                                "Precision": precision_score(test_df[label], test_df[f"{label}_predicted"]),
                                "Recall": recall_score(test_df[label], test_df[f"{label}_predicted"])}
     print(label_scores)
