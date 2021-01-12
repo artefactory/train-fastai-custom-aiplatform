@@ -111,8 +111,10 @@ def train_classifier(train_df, lm_dls, config, args):
     # Train the classifier using the previously fine-tuned LM
     if len(LABEL_LIST) > 1:
         block_category = MultiCategoryBlock()
+        label_delim = LABEL_DELIM
     else:
         block_category = CategoryBlock()
+        label_delim = None
 
     blocks = (TextBlock.from_df(TEXT_COL_NAME,
                                 seq_len=lm_dls.seq_len,
@@ -121,7 +123,7 @@ def train_classifier(train_df, lm_dls, config, args):
 
     clf_datablock = DataBlock(blocks=blocks,
                               get_x=ColReader("text"),
-                              get_y=ColReader(LABEL_COL_NAME, label_delim=LABEL_DELIM),
+                              get_y=ColReader(LABEL_COL_NAME, label_delim=label_delim),
                               splitter=RandomSplitter(valid_pct=VAL_SIZE, seed=RANDOM_STATE)
                               )
 
