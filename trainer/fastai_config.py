@@ -23,12 +23,12 @@ TEST_SIZE = 0.25
 ## Filepaths and filenames ##
 
 # GCS File paths
-PRETRAINED_GCS_FOLDER = "pretrained/{}/{}"
+PRETRAINED_GCS_FOLDER = "pretrained/{}"
 # TBM -> Need to be reorganized
 DATASET_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "labelled_dataset.csv")
-VOCAB_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "vocab.pkl")
-CONFIG_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "config.json")
-WEIGHTS_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "weights.pth")
+VOCAB_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}", "vocab.pkl")
+CONFIG_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}","config.json")
+WEIGHTS_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}","weights.pth")
 
 # Local File paths
 MODELS_LOCAL_FOLDER = "models"
