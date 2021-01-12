@@ -19,27 +19,29 @@ TEST_SIZE = 0.25
 
 ## Filepaths and filenames ##
 
+# Pretrained filenames
+LABELLED_DATASET_FILE = "labelled_dataset.csv"
+CONFIG_PRETRAINED_FILE = "config.json"
+VOCAB_PRETRAINED_FILE = "vocab"
+WEIGHTS_PRETRAINED_FILE = "weights"
+
 # GCS File paths
 PRETRAINED_GCS_FOLDER = "pretrained/{}"
-# TBM -> Need to be reorganized
-DATASET_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "labelled_dataset.csv")
-VOCAB_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}", "vocab.pkl")
-CONFIG_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}","config.json")
-WEIGHTS_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}","weights.pth")
+LM_FORWARD_FOLDER = "forward"
+LM_BACKWARD_FOLDER = "backward"
+DATASET_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, LABELLED_DATASET_FILE)
+CONFIG_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}", CONFIG_PRETRAINED_FILE)
+VOCAB_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}", f"{VOCAB_PRETRAINED_FILE}.pkl")
+WEIGHTS_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "{}", f"{WEIGHTS_PRETRAINED_FILE}.pth")
 
 # Local File paths
-MODELS_LOCAL_FOLDER = "models"
-TRAINER_LOCAL_FOLDER = "trainer"
-DATASET_LOCAL_PATH = os.path.join(TRAINER_LOCAL_FOLDER, "labelled_dataset.csv")
-VOCAB_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, "vocab.pkl")
-CONFIG_LOCAL_PATH = os.path.join(TRAINER_LOCAL_FOLDER, "config.json")
-WEIGHTS_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, "weights.pth")
+MODELS_LOCAL_FOLDER = "models" 
+DATASET_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, LABELLED_DATASET_FILE)
+CONFIG_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, CONFIG_PRETRAINED_FILE)
+VOCAB_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, f"{VOCAB_PRETRAINED_FILE}.pkl")
+WEIGHTS_LOCAL_PATH = os.path.join(MODELS_LOCAL_FOLDER, f"{WEIGHTS_PRETRAINED_FILE}.pth")
 
-# Pretrained filenames
-WEIGHTS_PRETRAINED_FILE = "weights"
-VOCAB_PRETRAINED_FILE = "vocab"
-
-# Trained model filename
+# Trained model filenames
 LM_MODEL_PATH = "."
 BESTMODEL_NAME = "bestmodel"
 ENCODER_FILE_NAME = "encoder"

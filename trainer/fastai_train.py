@@ -9,7 +9,8 @@ from fastai.data.block import CategoryBlock, DataBlock, MultiCategoryBlock
 from fastai.data.transforms import ColReader, RandomSplitter
 from fastai.learner import load_learner
 from fastai.metrics import Perplexity, accuracy, error_rate
-from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config, awd_qrnn_lm_config, awd_qrnn_clas_config)
+from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config,
+                             awd_qrnn_clas_config, awd_qrnn_lm_config)
 from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
 from sklearn.model_selection import train_test_split
@@ -17,14 +18,13 @@ from sklearn.model_selection import train_test_split
 from fastai_config import (BESTMODEL_NAME, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH,
                            DATASET_GCS_PATH, DATASET_LOCAL_PATH,
                            ENCODER_FILE_NAME, LABEL_COL_NAME, LABEL_DELIM,
-                           LABEL_LIST, LM_MODEL_PATH,
-                           METRIC_TO_MONITOR, MODEL_FILE_NAME,
-                           MODELS_LOCAL_FOLDER,
-                           OTHER_LABEL_NAME, RANDOM_STATE, TEST_SIZE,
-                           TEXT_COL_NAME, TRAINER_LOCAL_FOLDER, VAL_SIZE,
-                           VOCAB_GCS_PATH, VOCAB_LOCAL_PATH,
-                           VOCAB_PRETRAINED_FILE, WEIGHTS_GCS_PATH,
-                           WEIGHTS_LOCAL_PATH, WEIGHTS_PRETRAINED_FILE)
+                           LABEL_LIST, LM_BACKWARD_FOLDER, LM_FORWARD_FOLDER,
+                           LM_MODEL_PATH, METRIC_TO_MONITOR, MODEL_FILE_NAME,
+                           MODELS_LOCAL_FOLDER, OTHER_LABEL_NAME, RANDOM_STATE,
+                           TEST_SIZE, TEXT_COL_NAME, VAL_SIZE, VOCAB_GCS_PATH,
+                           VOCAB_LOCAL_PATH, VOCAB_PRETRAINED_FILE,
+                           WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH,
+                           WEIGHTS_PRETRAINED_FILE)
 from gcs_utils import download_file_from_gcs
 
 
@@ -73,7 +73,7 @@ def find_best_lr(learner):
     return lr
 
 
-def train_lm(train_df, config, args):
+def finetune_lm(train_df, config, args):
     # Function to fine-tune the pre-trained language model
     blocks = TextBlock.from_df(TEXT_COL_NAME,
                                is_lm=True)
@@ -164,9 +164,9 @@ def train_fastai_model(args):
     download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH.format(args.lang), DATASET_LOCAL_PATH)
     if args.lang != 'en':
         if args.bw:
-            lm_type = 'backward'
+            lm_type = LM_BACKWARD_FOLDER
         else:
-            lm_type = 'forward'
+            lm_type = LM_FORWARD_FOLDER
         download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH.format(args.lang, lm_type), VOCAB_LOCAL_PATH)
         download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH.format(args.lang, lm_type), CONFIG_LOCAL_PATH)
         download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH.format(args.lang, lm_type), WEIGHTS_LOCAL_PATH)
@@ -180,7 +180,7 @@ def train_fastai_model(args):
     config = open_config_file(args.lang, CONFIG_LOCAL_PATH)
 
     # Fine-tune language model
-    lm_dls = train_lm(train_df, config, args)
+    lm_dls = finetune_lm(train_df, config, args)
 
     # Create and train classifier
     model_file_name = train_classifier(train_df, lm_dls, config, args)

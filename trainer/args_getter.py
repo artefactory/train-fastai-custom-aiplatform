@@ -11,11 +11,11 @@ def get_args():
     parser.add_argument(
         '--bucket-name',
         default=None,
-        help='The name of your bucket  in your GCP project')
+        help='The name of your bucket in GCS')
     parser.add_argument(
         '--model-dir',
         default=None,
-        help='The directory to store the model')
+        help='The directory to store the model in GCS')
 
     # Model arguments
     parser.add_argument(
@@ -36,7 +36,7 @@ def get_args():
     parser.add_argument(
         '--epochs',
         type=int,
-        default=1,
+        default=8,
         metavar='N',
         help='number of epochs to train (default: 1)')
     parser.add_argument(
