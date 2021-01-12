@@ -71,10 +71,12 @@ The fastai_config.py file contains all the variables that will be useful to trai
   - LABEL_DELIM: Delimiter between your labels in your LABEL_COL_NAME column
   - LABEL_LIST: List of the labels to be taken into account (referring to the columns of the dataset if it's one-hot encoded)
   - OTHER_LABEL_NAME: Label to give when no label is assigned to a text
+  - PREDICTION_COL_NAME: Name of the column that will store the predictions during inference on test dataset (to assess model's performances)
   - METRIC_TO_MONITOR: Metric to be monitored during the training to improve your model
   - RANDOM_STATE: Random state of train/test/valid split of dataframe
   - VAL_SIZE: Proportion of samples to be used for validation
   - TEST_SIZE: Proportion of samples to be used for testing
+  - PREDICTION_THRESHOLD: Text with a prediction score above the threshold will be assigned the corresponding label during prediction
   
 The other variables refer to the names and locations of all the files to be used during the training.
 
