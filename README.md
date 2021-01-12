@@ -46,7 +46,15 @@ The first thing youâ€™ll have to do will be to setup your working environment. H
   - JOB_NAME: AI Platform job name
 
 - Create a bucket on GCS with the same architecture as in the following drive, and upload your files in it:
-  https://drive.google.com/drive/folders/1JHfan6SFOXz5X0h49GOdORQQI3-rjpJX?usp=sharing
+  https://drive.google.com/drive/folders/1JHfan6SFOXz5X0h49GOdORQQI3-rjpJX?usp=sharing.
+
+  You will find on this Drive all the files that are necessary to train your classifier:
+  - A labelled dataset to train your classifier (that can be replaced by your own)
+  - A pretrained language model (forward or backward depending on the language) defined by three files:
+    - A vocab.pkl file corresponding to the vocabulary of the LM
+    - A config.json file where the configuration of the model is encoded
+    - A weights.pth file containing the weights of the model
+  You will be able to specify if you want to use a backward model to train your classifier
 
 
 # Train the model
@@ -109,7 +117,7 @@ You just have to run the following command for everything to start running. Youâ
 > --lang=fr \
 > --epochs=8 \
 > --bucket-name=$BUCKET_NAME \
-> --model-dir=$MODEL_DIR
+> --model-dir=$MODEL_DIR \
 > --bw
 > ```
 We specified a few parameters here:
