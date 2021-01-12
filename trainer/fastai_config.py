@@ -7,6 +7,7 @@ LABEL_COL_NAME = "labels"
 LABEL_DELIM = ","
 LABEL_LIST = ["skincare"]
 OTHER_LABEL_NAME = "other"
+PREDICTION_COL_NAME = "predict"
 
 # Model parameters
 METRIC_TO_MONITOR = "valid_loss"
@@ -15,6 +16,7 @@ METRIC_TO_MONITOR = "valid_loss"
 RANDOM_STATE = 42
 VAL_SIZE = 0.2
 TEST_SIZE = 0.25
+PREDICTION_THRESHOLD = 0.3
 
 
 ## Filepaths and filenames ##
@@ -46,3 +48,4 @@ LM_MODEL_PATH = "."
 BESTMODEL_NAME = "bestmodel"
 ENCODER_FILE_NAME = "encoder"
 MODEL_FILE_NAME = "fastai_model.pth"
+LABEL_SCORE_FILE_NAME = "label_scores.json"

@@ -10,13 +10,17 @@ def train_model():
     args = get_args()
 
     # Train FastAI model
-    model_file_name = train_fastai_model(args)
+    model_file_name, label_scores_file_name = train_fastai_model(args)
 
     # Upload model to GCS
     if args.model_dir:
-        gcs_file_path = os.path.join(f'gs://{args.bucket_name}', args.model_dir, model_file_name)
+        gcs_model_file_path = os.path.join(f'gs://{args.bucket_name}', args.model_dir, model_file_name)
         upload_file_to_gcs(model_file_name,
-                           gcs_file_path)
+                           gcs_model_file_path)
+        gcs_label_scores_file_path = os.path.join(f'gs://{args.bucket_name}', args.model_dir, label_scores_file_name)
+        upload_file_to_gcs(label_scores_file_name,
+                           gcs_label_scores_file_path)
+
 
 if __name__ == '__main__':
     # Launch training of the model

@@ -13,18 +13,21 @@ from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config,
                              awd_qrnn_clas_config, awd_qrnn_lm_config)
 from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 
 from fastai_config import (BESTMODEL_NAME, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH,
                            DATASET_GCS_PATH, DATASET_LOCAL_PATH,
                            ENCODER_FILE_NAME, LABEL_COL_NAME, LABEL_DELIM,
-                           LABEL_LIST, LM_BACKWARD_FOLDER, LM_FORWARD_FOLDER,
+                           LABEL_LIST, LABEL_SCORE_FILE_NAME,
+                           LM_BACKWARD_FOLDER, LM_FORWARD_FOLDER,
                            LM_MODEL_PATH, METRIC_TO_MONITOR, MODEL_FILE_NAME,
-                           MODELS_LOCAL_FOLDER, OTHER_LABEL_NAME, RANDOM_STATE,
-                           TEST_SIZE, TEXT_COL_NAME, VAL_SIZE, VOCAB_GCS_PATH,
-                           VOCAB_LOCAL_PATH, VOCAB_PRETRAINED_FILE,
-                           WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH,
-                           WEIGHTS_PRETRAINED_FILE)
+                           MODELS_LOCAL_FOLDER, OTHER_LABEL_NAME,
+                           PREDICTION_COL_NAME, PREDICTION_THRESHOLD,
+                           RANDOM_STATE, TEST_SIZE, TEXT_COL_NAME, VAL_SIZE,
+                           VOCAB_GCS_PATH, VOCAB_LOCAL_PATH,
+                           VOCAB_PRETRAINED_FILE, WEIGHTS_GCS_PATH,
+                           WEIGHTS_LOCAL_PATH, WEIGHTS_PRETRAINED_FILE)
 from gcs_utils import download_file_from_gcs
 
 
@@ -41,6 +44,17 @@ def _format_column_multilabels(row, label_list, label_delim, other_label_name=OT
     return result
 
 
+def open_config_file(language, config_local_path=None):
+    # Open config.json file containing model pretrained LM configuration
+    if language == "en" or config_local_path is None:
+        config = awd_qrnn_lm_config.copy()
+    else:
+        with open(config_local_path, "r") as config_file:
+            config = json.load(config_file)
+            config.pop("qrnn")
+    return config
+
+
 def update_classif_config(config):
     # Update LM config file to be used by the classifier dataloaders
     config_lm = config.copy()
@@ -50,6 +64,12 @@ def update_classif_config(config):
         config_lm.pop(key)
     clf_config.update(config_lm)
     return clf_config
+
+
+def find_best_lr(learner):
+    # FastAI native method to find the best LR for the training
+    lr, _ = learner.lr_find(suggestions=True)
+    return lr
 
 
 def fit_with_gradual_unfreezing(learner, epochs, lr):
@@ -65,12 +85,6 @@ def fit_with_gradual_unfreezing(learner, epochs, lr):
                                SaveModelCallback(monitor=METRIC_TO_MONITOR, fname=BESTMODEL_NAME)])
     learner.load(BESTMODEL_NAME)
     return learner
-
-
-def find_best_lr(learner):
-    # FastAI native method to find the best LR for the training
-    lr, _ = learner.lr_find(suggestions=True)
-    return lr
 
 
 def finetune_lm(train_df, config, args):
@@ -142,18 +156,28 @@ def train_classifier(train_df, lm_dls, config, args):
     lr = find_best_lr(learner_clf)
     learner_clf = fit_with_gradual_unfreezing(learner_clf, args.epochs, lr)
     learner_clf.export(MODEL_FILE_NAME)
-    return MODEL_FILE_NAME
+    return learner_clf, MODEL_FILE_NAME
 
 
-def open_config_file(language, config_local_path=None):
-    # Open config.json file containing model pretrained LM configuration
-    if language == "en" or config_local_path is None:
-        config = awd_qrnn_lm_config.copy()
-    else:
-        with open(config_local_path, "r") as config_file:
-            config = json.load(config_file)
-            config.pop("qrnn")
-    return config
+def assess_classifier_performances(learner, test_df, prediction_threshold, label_list, label_delim):
+    # Assess model performances for each label (Accuracy, Precision and Recall)
+    test_dataloader = learner.dls.test_dl(test_df)
+    prediction_result, _ = learner_clf.get_preds(dl=test_dataloader)
+    classes = learner_clf.dls.vocab[1]
+    test_df.loc[:, PREDICTION_COL_NAME] = [
+        label_delim.join(classes[tensor > prediction_threshold]) for tensor in prediction_result].apply(
+            lambda x: OTHER_LABEL_NAME if x=="" else x)
+    label_scores = dict()
+    for label in label_list:
+        test_df.loc[:, f"{label}_predicted"] = test_df.loc[:, PREDICTION_COL_NAME].apply(lambda x: float(label in x))
+        label_scores(label) = {"Accuracy": accuracy_score(test_df[label], test_df[f"{label}_predicted"]),
+                               "Precision": precision_score(test_df[label], test_df[f"{label}_predicted"]),
+                               "Recall": recall_score(test_df[label], test_df[f"{label}_predicted"])}
+    print(label_scores)
+    with open(LABEL_SCORE_FILE_NAME, 'w') as filepath:
+        json.dump(label_scores, filepath)
+    return LABEL_SCORE_FILE_NAME
+
 
 
 def train_fastai_model(args):
@@ -183,6 +207,14 @@ def train_fastai_model(args):
     lm_dls = finetune_lm(train_df, config, args)
 
     # Create and train classifier
-    model_file_name = train_classifier(train_df, lm_dls, config, args)
+    learner_clf, model_file_name = train_classifier(train_df, lm_dls, config, args)
 
-    return model_file_name
+    # Assess model performances for each label
+    test_df = test_df.rename(columns={"text_clean": "text"})
+    label_scores_file_name = assess_classifier_performances(learner_clf,
+                                                            test_df,
+                                                            PREDICTION_THRESHOLD,
+                                                            LABEL_LIST,
+                                                            LABEL_DELIM)
+
+    return model_file_name, label_scores_file_name
