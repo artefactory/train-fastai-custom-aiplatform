@@ -1,39 +1,9 @@
 import os
-import argparse
 
 from gcs_utils import upload_file_to_gcs
 
 from fastai_train import train_fastai_model
-
-
-def get_args():
-    """Argument parser.
-    Returns:
-      Dictionary of arguments.
-    """
-    parser = argparse.ArgumentParser(description='Arguments to train the model')
-    parser.add_argument(
-        '--batch-size',
-        type=int,
-        default=16,
-        metavar='N',
-        help='input batch size for training (default: 16)')
-    parser.add_argument(
-        '--epochs',
-        type=int,
-        default=1,
-        metavar='N',
-        help='number of epochs to train (default: 1)')
-    parser.add_argument(
-        '--bucket-name',
-        default=None,
-        help='The name of your bucket  in your GCP project')
-    parser.add_argument(
-        '--model-dir',
-        default=None,
-        help='The directory to store the model')
-    args = parser.parse_args()
-    return args
+from args_getter import get_args
 
 def train_model():
     # Import args

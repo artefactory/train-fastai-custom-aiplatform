@@ -10,8 +10,8 @@ OTHER_LABEL_NAME = "other"
 
 # Model parameters
 METRIC_TO_MONITOR = "valid_loss"
-DROP_MULT = 0.3 # Between 0 and 1
-LANGUAGE = 'fr' # Choose among ['en', 'fr', 'ko', 'ja', 'zh']
+#DROP_MULT = 0.3 # Between 0 and 1
+#LANGUAGE = 'fr' # Choose among ['en', 'fr', 'ko', 'ja', 'zh']
 BACKWARD = True 
 
 # Variables of train/test split
@@ -23,7 +23,7 @@ TEST_SIZE = 0.25
 ## Filepaths and filenames ##
 
 # GCS File paths
-PRETRAINED_GCS_FOLDER = os.ath.join("pretrained", LANGUAGE)
+PRETRAINED_GCS_FOLDER = "pretrained/{}"
 LM_TYPE_GCS_FOLDER = {False: 'forward', True: 'backward'}
 DATASET_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "labelled_dataset.csv")
 VOCAB_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, LM_TYPE_GCS_FOLDER.get(BACKWARD), "vocab.pkl")

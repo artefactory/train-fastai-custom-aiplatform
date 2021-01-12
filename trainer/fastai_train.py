@@ -15,9 +15,9 @@ from fastai.text.learner import language_model_learner, text_classifier_learner
 from sklearn.model_selection import train_test_split
 
 from fastai_config import (BESTMODEL_NAME, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH,
-                           DATASET_GCS_PATH, DATASET_LOCAL_PATH, DROP_MULT,
+                           DATASET_GCS_PATH, DATASET_LOCAL_PATH,
                            ENCODER_FILE_NAME, LABEL_COL_NAME, LABEL_DELIM,
-                           LABEL_LIST, LANGUAGE, LM_MODEL_PATH,
+                           LABEL_LIST, LM_MODEL_PATH,
                            METRIC_TO_MONITOR, MODEL_FILE_NAME,
                            MODELS_LOCAL_FOLDER,
                            OTHER_LABEL_NAME, RANDOM_STATE, TEST_SIZE,
@@ -42,7 +42,7 @@ def _format_column_multilabels(row, label_list, label_delim, other_label_name=OT
 
 
 def update_classif_config(config):
-    # Update LM config file to be used to create a classifier
+    # Update LM config file to be used by the classifier dataloaders
     config_lm = config.copy()
     clf_config = awd_qrnn_clas_config.copy()
     keys_to_remove = set(config_lm.keys()) - set(clf_config.keys())
@@ -53,6 +53,7 @@ def update_classif_config(config):
 
 
 def fit_with_gradual_unfreezing(learner, epochs, lr, cycles):
+    # Fit the frozen model on one cycle, unfreeze it, and fit it again on another cycle
     learner.fit_one_cycle(epochs,
                           lr_max = slice(lr),
                           cbs=[ShowGraphCallback(),
@@ -67,6 +68,7 @@ def fit_with_gradual_unfreezing(learner, epochs, lr, cycles):
 
 
 def find_best_lr(learner):
+    # FastAI native method to find the best LR for the training
     lr, _ = learner.lr_find(suggestions=True)
     return lr
 
@@ -81,8 +83,8 @@ def train_lm(train_df, config, args):
                            splitter=RandomSplitter(valid_pct=VAL_SIZE, seed=RANDOM_STATE))
 
     lm_dataloaders =(data_block).dataloaders(train_df,
-                                         bs=args.batch_size,
-                                         backwards = True)
+                                             bs=args.batch_size,
+                                             backwards = True)
 
     pretrained_filenames = [WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE]
 
@@ -126,7 +128,7 @@ def train_classifier(train_df, lm_dls, config, args):
     learner_clf = text_classifier_learner(clf_dataloaders,
                                           AWD_QRNN,
                                           path=clf_dataloaders.path,
-                                          drop_mult=DROP_MULT,
+                                          drop_mult=args.drop_mult,
                                           config=config_cls)
     learner_clf.load_encoder(ENCODER_FILE_NAME)
 
@@ -137,6 +139,7 @@ def train_classifier(train_df, lm_dls, config, args):
 
 
 def open_config_file(language, config_local_path=None):
+    # Open config.json file containing model pretrained LM configuration
     if language == "en" or config_local_path is None:
         config = awd_qrnn_lm_config.copy()
     else:
@@ -151,11 +154,11 @@ def train_fastai_model(args):
     print(torch.cuda.is_available())
 
     # Download necessary files (for english language, only the labelled dataset is necessary)
-    download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH, DATASET_LOCAL_PATH)
-    if LANGUAGE != 'en':
-        download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH, VOCAB_LOCAL_PATH)
-        download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH, CONFIG_LOCAL_PATH)
-        download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH, WEIGHTS_LOCAL_PATH)
+    download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH.format(args.lang), DATASET_LOCAL_PATH)
+    if args.lang != 'en':
+        download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH.format(args.lang), VOCAB_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH.format(args.lang), CONFIG_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH.format(args.lang), WEIGHTS_LOCAL_PATH)
 
     # Format dataframe for training
     df = pd.read_csv(DATASET_LOCAL_PATH)
@@ -163,7 +166,7 @@ def train_fastai_model(args):
     train_df, test_df = train_test_split(df.dropna(), test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Open json config file
-    config = open_config_file(LANGUAGE, CONFIG_LOCAL_PATH)
+    config = open_config_file(args.lang, CONFIG_LOCAL_PATH)
 
     # Fine-tune language model
     lm_dls = train_lm(train_df, config, args)
