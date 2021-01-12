@@ -5,14 +5,11 @@ import os
 TEXT_COL_NAME = "text_clean"
 LABEL_COL_NAME = "labels"
 LABEL_DELIM = ","
-LABEL_LIST = ["skincare", "makeup"]
+LABEL_LIST = ["skincare"]
 OTHER_LABEL_NAME = "other"
 
 # Model parameters
 METRIC_TO_MONITOR = "valid_loss"
-#DROP_MULT = 0.3 # Between 0 and 1
-#LANGUAGE = 'fr' # Choose among ['en', 'fr', 'ko', 'ja', 'zh']
-#BACKWARD = True 
 
 # Variables of train/test split
 RANDOM_STATE = 42

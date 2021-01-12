@@ -161,7 +161,7 @@ def train_fastai_model(args):
     # Download necessary files (for english language, only the labelled dataset is necessary)
     download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH.format(args.lang), DATASET_LOCAL_PATH)
     if args.lang != 'en':
-        if args.bw == True:
+        if args.bw:
             lm_type = 'backward'
         else:
             lm_type = 'forward'
