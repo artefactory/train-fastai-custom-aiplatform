@@ -39,5 +39,10 @@ def get_args():
         default=1,
         metavar='N',
         help='number of epochs to train (default: 1)')
+    parser.add_argument(
+        '--bw',
+        type=bool,
+        default=False,
+        help='Indicates if the pretrained LM is forward or backward')
     args = parser.parse_args()
     return args

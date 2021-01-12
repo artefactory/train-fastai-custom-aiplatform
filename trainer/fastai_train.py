@@ -158,12 +158,17 @@ def train_fastai_model(args):
     # Ensure CUDA is enabled
     print(torch.cuda.is_available())
 
+    if args.bw == True:
+        lm_type = 'backward'
+    else:
+        lm_type = 'forward'
+
     # Download necessary files (for english language, only the labelled dataset is necessary)
-    download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH.format(args.lang), DATASET_LOCAL_PATH)
+    download_file_from_gcs(args.bucket_name, DATASET_GCS_PATH.format(args.lang, lm_type), DATASET_LOCAL_PATH)
     if args.lang != 'en':
-        download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH.format(args.lang), VOCAB_LOCAL_PATH)
-        download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH.format(args.lang), CONFIG_LOCAL_PATH)
-        download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH.format(args.lang), WEIGHTS_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, VOCAB_GCS_PATH.format(args.lang, lm_type), VOCAB_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, CONFIG_GCS_PATH.format(args.lang, lm_type), CONFIG_LOCAL_PATH)
+        download_file_from_gcs(args.bucket_name, WEIGHTS_GCS_PATH.format(args.lang, lm_type), WEIGHTS_LOCAL_PATH)
 
     # Format dataframe for training
     df = pd.read_csv(DATASET_LOCAL_PATH)
