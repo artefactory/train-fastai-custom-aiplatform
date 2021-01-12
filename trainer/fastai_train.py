@@ -84,7 +84,7 @@ def train_lm(train_df, config, args):
 
     lm_dataloaders =(data_block).dataloaders(train_df,
                                              bs=args.batch_size,
-                                             backwards = True)
+                                             backwards = args.bw)
 
     if args.lang =='en':
         is_pretrained = False
