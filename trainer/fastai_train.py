@@ -52,7 +52,7 @@ def update_classif_config(config):
     return clf_config
 
 
-def fit_with_gradual_unfreezing(learner, epochs, lr, cycles):
+def fit_with_gradual_unfreezing(learner, epochs, lr):
     # Fit the frozen model on one cycle, unfreeze it, and fit it again on another cycle
     learner.fit_one_cycle(epochs,
                           lr_max = slice(lr),
