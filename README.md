@@ -6,7 +6,7 @@
 
 # Introduction
 AI Platform is a fully-managed cost-effective service provided by Google Cloud Platform, allowing users to train, deploy and use ML models directly on cloud. 
-We'll see in this repo how to setup AI Platform for ML models training, and how to automatically train models using any framework we want.
+We'll see in this repo how to setup AI Platform for ML models training, and how to automatically train text classifiers with FastAI.
 
 # Pre-requisites
 To follow this tutorial, be sure to have in possession the following elements:
@@ -15,6 +15,7 @@ To follow this tutorial, be sure to have in possession the following elements:
 - Docker and nvidia-docker installed on your VM. You can find how to install them here:
   - https://docs.docker.com/engine/install/ubuntu/ to install docker
   - https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker to install nvidia-docker
+- A labelled dataset to train your model on
 
 # Set-up your environment
 The first thing you’ll have to do will be to setup your working environment. Here is a checklist of what to do:
@@ -54,6 +55,22 @@ The first thing you’ll have to do will be to setup your working environment. H
 > git clone https://github.com/artefactory/train-fastai-custom-aiplatform.git
 > ```
 
+
+## Take a look at the configuration file and make necessary changes
+The fastai_config.py file contains all the variables that will be useful to train your model, and the names of the files to fetch your model with. Here's the list of all the variables:
+  - TEXT_COL_NAME: Name of the text column in your labelled dataset
+  - LABEL_COL_NAME: Name of the column containing your labels in your dataset (will be created automatically from )
+  - LABEL_DELIM: Delimiter between your labels in your LABEL_COL_NAME column
+  - LABEL_LIST: List of the labels to be taken into account (referring to the columns of the dataset if it's one-hot encoded)
+  - OTHER_LABEL_NAME: Label to give when no label is assigned to a text
+  - METRIC_TO_MONITOR: Metric to be monitored during the training to improve your model
+  - RANDOM_STATE: Random state of train/test/valid split of dataframe
+  - VAL_SIZE: Proportion of samples to be used for validation
+  - TEST_SIZE: Proportion of samples to be used for testing
+  
+The other variables refer to the names and locations of all the files to be used during the training.
+
+
 ## Build image.
 The image is built based on Nvidia Cuda 10.1-devel image, which should automatically be pulled when trying to build.
 > ```python
@@ -66,7 +83,7 @@ You’ll get a success message if the image is built correctly, or an error mess
 Once your image is built, you can run the container to see if everything works (especially cuda).
 Permission to upload to GCS may be denied (403), but should work when doing it with AIP, so no worries if it's the only thing that causes errors
 > ```python
-> docker run --runtime=nvidia $IMAGE_URI --epochs 2 --bucket-name $BUCKET_NAME
+> docker run --runtime=nvidia $IMAGE_URI --lang fr --epochs 2 --bucket-name $BUCKET_NAME
 > ```
 Don't forget to specify that you want to run on GPU (nvidia runtime), and the number of epochs to train your model on
 
@@ -89,9 +106,11 @@ You just have to run the following command for everything to start running. You�
 > --region $REGION \
 > --master-image-uri $IMAGE_URI \
 > -- \
+> --lang=fr \
 > --epochs=8 \
 > --bucket-name=$BUCKET_NAME \
 > --model-dir=$MODEL_DIR
+> --bw
 > ```
 We specified a few parameters here:
   - The name of the job
@@ -99,9 +118,11 @@ We specified a few parameters here:
   - The region we want our running machine to be
   - The URI of our custom container
   - Our arguments:
+    - The language of our dataset
     - The number of epochs
     - The name of our bucket in GCS
     - The name of the directory to store our trained model
+    - The type of pretrained LM (forward or backward). You can specify that it's a backward model by adding '--bw' (forward by default)
 This might take some time depending on how many epochs you chose to train your model on
 
 - You can view the status of your job with the command
