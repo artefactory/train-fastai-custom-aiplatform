@@ -24,7 +24,9 @@ TEST_SIZE = 0.25
 
 # GCS File paths
 PRETRAINED_GCS_FOLDER = "pretrained/{}"
-LM_TYPE_GCS_FOLDER = {False: 'forward', True: 'backward'}
+# TBM -> Need to be reorganized
+LM_TYPE_GCS_FOLDER = {False: 'pretrained_language_models/forward',
+                      True: 'pretrained_language_models/backward'}
 DATASET_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, "labelled_dataset.csv")
 VOCAB_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, LM_TYPE_GCS_FOLDER.get(BACKWARD), "vocab.pkl")
 CONFIG_GCS_PATH = os.path.join(PRETRAINED_GCS_FOLDER, LM_TYPE_GCS_FOLDER.get(BACKWARD), "config.json")
