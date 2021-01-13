@@ -47,7 +47,7 @@ def _format_column_multilabels(row, label_list, label_delim, other_label_name=OT
 def open_config_file(language, config_local_path=None):
     # Open config.json file containing model pretrained LM configuration
     if language == "en" or config_local_path is None:
-        config = awd_qrnn_lm_config.copy()
+        config = awd_lstm_lm_config.copy()
         arch = AWD_LSTM
     else:
         with open(config_local_path, "r") as config_file:
@@ -60,7 +60,7 @@ def open_config_file(language, config_local_path=None):
 def update_classif_config(config, arch):
     # Update LM config file to be used by the classifier dataloaders
     config_lm = config.copy()
-    if arch==AWD_LSTM:
+    if arch == AWD_LSTM:
         clf_config = awd_lstm_clas_config.copy()
     else:
         clf_config = awd_qrnn_clas_config.copy()
