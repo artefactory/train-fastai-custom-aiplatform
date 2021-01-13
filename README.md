@@ -130,8 +130,9 @@ You just have to run the following command for everything to start running. Youâ
 > --master-image-uri $IMAGE_URI \
 > -- \
 > --lang=fr \
+> --epochs=10 \
 > --bucket-name=$BUCKET_NAME \
-> --model-dir=$MODEL_DIR \
+> --model-dir=$MODEL_DIR
 > ```
 
 We specified a few parameters here:
