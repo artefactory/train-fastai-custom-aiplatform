@@ -1,18 +1,18 @@
 import os
 ## Model customization ##
 
-# Information on the DataFrame
+# Information describing your dataframe
 TEXT_COL_NAME = "text_clean"
+LABEL_LIST = ["skincare"]
+
+# Training variables
 LABEL_COL_NAME = "labels"
 LABEL_DELIM = ","
-LABEL_LIST = ["skincare"]
 OTHER_LABEL_NAME = "other"
 PREDICTION_COL_NAME = "predict"
 
-# Model parameters
+# Training parameters
 METRIC_TO_MONITOR = "valid_loss"
-
-# Variables of train/test split
 RANDOM_STATE = 42
 VAL_SIZE = 0.2
 TEST_SIZE = 0.25
