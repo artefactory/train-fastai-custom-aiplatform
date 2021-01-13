@@ -10,7 +10,7 @@ from fastai.data.transforms import ColReader, RandomSplitter
 from fastai.learner import load_learner
 from fastai.metrics import Perplexity, accuracy, error_rate
 from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config,
-                             awd_qrnn_clas_config, awd_qrnn_lm_config)
+                             awd_qrnn_clas_config, awd_lstm_lm_config)
 from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
 from sklearn.metrics import accuracy_score, precision_score, recall_score
@@ -48,17 +48,22 @@ def open_config_file(language, config_local_path=None):
     # Open config.json file containing model pretrained LM configuration
     if language == "en" or config_local_path is None:
         config = awd_qrnn_lm_config.copy()
+        arch = AWD_LSTM
     else:
         with open(config_local_path, "r") as config_file:
             config = json.load(config_file)
             config.pop("qrnn")
-    return config
+        arch = AWD_QRNN
+    return config, arch
 
 
-def update_classif_config(config):
+def update_classif_config(config, arch):
     # Update LM config file to be used by the classifier dataloaders
     config_lm = config.copy()
-    clf_config = awd_qrnn_clas_config.copy()
+    if arch==AWD_LSTM:
+        clf_config = awd_lstm_clas_config.copy()
+    else:
+        clf_config = awd_qrnn_clas_config.copy()
     keys_to_remove = set(config_lm.keys()) - set(clf_config.keys())
     for key in keys_to_remove:
         config_lm.pop(key)
@@ -87,7 +92,7 @@ def fit_with_gradual_unfreezing(learner, epochs, lr):
     return learner
 
 
-def finetune_lm(train_df, config, args):
+def finetune_lm(train_df, config, arch, args):
     # Function to fine-tune the pre-trained language model
     blocks = TextBlock.from_df(TEXT_COL_NAME,
                                is_lm=True)
@@ -101,17 +106,15 @@ def finetune_lm(train_df, config, args):
                                              backwards = args.bw)
 
     if args.lang =='en':
-        is_pretrained = False
         pretrained_filenames = None
     else:
-        is_pretrained = True
         pretrained_filenames = [WEIGHTS_PRETRAINED_FILE, VOCAB_PRETRAINED_FILE]
 
     learner_lm = language_model_learner(lm_dataloaders,
-                                        AWD_QRNN,
+                                        arch,
                                         config=config,
-                                        pretrained=is_pretrained,
                                         path=LM_MODEL_PATH,
+                                        pretrained=True,
                                         pretrained_fnames=pretrained_filenames)
 
     lr = find_best_lr(learner_lm)
@@ -121,7 +124,7 @@ def finetune_lm(train_df, config, args):
     return lm_dataloaders
 
 
-def train_classifier(train_df, lm_dls, config, args):
+def train_classifier(train_df, lm_dls, config, arch, args):
     # Train the classifier using the previously fine-tuned LM
     if len(LABEL_LIST) > 1:
         block_category = MultiCategoryBlock()
@@ -144,13 +147,14 @@ def train_classifier(train_df, lm_dls, config, args):
     clf_dataloaders = clf_datablock.dataloaders(train_df,
                                                 bs=args.batch_size)
 
-    config_cls = update_classif_config(config)
+    config_cls = update_classif_config(config, arch)
 
     learner_clf = text_classifier_learner(clf_dataloaders,
-                                          AWD_QRNN,
+                                          arch,
                                           path=clf_dataloaders.path,
                                           drop_mult=args.drop_mult,
-                                          config=config_cls)
+                                          config=config_cls,
+                                          pretrained=False)
     learner_clf.load_encoder(ENCODER_FILE_NAME)
 
     lr = find_best_lr(learner_clf)
@@ -203,13 +207,13 @@ def train_fastai_model(args):
     train_df, test_df = train_test_split(df.dropna(), test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Open json config file
-    config = open_config_file(args.lang, CONFIG_LOCAL_PATH)
+    config, arch = open_config_file(args.lang, CONFIG_LOCAL_PATH)
 
     # Fine-tune language model
-    lm_dls = finetune_lm(train_df, config, args)
+    lm_dls = finetune_lm(train_df, config, arch, args)
 
     # Create and train classifier
-    learner_clf, model_file_name = train_classifier(train_df, lm_dls, config, args)
+    learner_clf, model_file_name = train_classifier(train_df, lm_dls, config, arch, args)
 
     # Assess model performances for each label
     label_scores_file_name = assess_classifier_performances(learner_clf,
