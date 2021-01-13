@@ -159,8 +159,9 @@ def train_classifier(train_df, lm_dls, config, args):
     return learner_clf, MODEL_FILE_NAME
 
 
-def assess_classifier_performances(learner, test_df, prediction_threshold, label_list, label_delim):
+def assess_classifier_performances(learner, test_df, prediction_threshold, text_col_name, label_list, label_delim):
     # Assess model performances for each label (Accuracy, Precision and Recall)
+    test_df = test_df.rename(columns={text_col_name: "text"})
     test_dataloader = learner.dls.test_dl(test_df)
     prediction_result, _ = learner.get_preds(dl=test_dataloader)
     classes = learner.dls.vocab[1]
@@ -211,10 +212,10 @@ def train_fastai_model(args):
     learner_clf, model_file_name = train_classifier(train_df, lm_dls, config, args)
 
     # Assess model performances for each label
-    test_df = test_df.rename(columns={"text_clean": "text"})
     label_scores_file_name = assess_classifier_performances(learner_clf,
                                                             test_df,
                                                             PREDICTION_THRESHOLD,
+                                                            TEXT_COL_NAME,
                                                             LABEL_LIST,
                                                             LABEL_DELIM)
 
