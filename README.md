@@ -6,7 +6,7 @@
 
 
 # Introduction
-Ever wanted to quickly train a text classifier without having to worry about lame things like "which framework should I use ?" or "should I use a VM to run on GPU?" ? Well, this repo should help you.
+Ever wanted to quickly train a text classifier without having to worry about "which framework should I use ?" or "should I use a VM to run on GPU?" ? Well, this repo should help you.
 
 Thanks to AI Platform, a fully-managed cost-effective service provided by Google Cloud Platform, you can now train ML models directly on cloud using any framework you want by deploying a custom Docker container hosting your training code on GCR, and calling it from your machine with a simple command. 
 
