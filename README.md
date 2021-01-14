@@ -6,8 +6,13 @@
 
 
 # Introduction
-AI Platform is a fully-managed cost-effective service provided by Google Cloud Platform, allowing users to train, deploy and use ML models directly on cloud. 
-We'll see in this repo how to setup AI Platform for ML models training, and how to automatically and easily train text-classifiers with FastAI.
+Ever wanted to quickly train a text classifier without having to worry about lame things like "which framework should I use ?" or "should I create a VM to run on GPU?" ? Well, this repo should help you.
+
+Thanks to AI Platform, a fully-managed cost-effective service provided by Google Cloud Platform, you can now train ML models directly on cloud using any framework you want by deploying a custom Docker container hosting your training code on GCR, and calling it from your machine with a simple command. 
+
+You will find in this repo everything you need to easily build and deploy a custom Docker container to train a text-classifier on AI Platform with FastAI, a PyTorch wrapper that allows you to train powerful models with only few samples thanks to transfer learning. 
+
+By simply modifying few lines of code, you'll be able to create a text classifier adapted to your particular use case, whether you need to assign sentiment scores to movie reviews of a french website, or predict if a Japanese Instagram publication is about beauty or food. 
 
 
 # Pre-requisites
