@@ -53,6 +53,8 @@ COPY trainer/fastai_train.py /root/trainer/fastai_train.py
 
 COPY trainer/fastai_config.py /root/trainer/fastai_config.py
 
+COPY trainer/args_getter.py /root/trainer/args_getter.py
+
 COPY trainer/gcs_utils.py /root/trainer/gcs_utils.py
 
 COPY trainer/training_workflow.py /root/trainer/training_workflow.py
