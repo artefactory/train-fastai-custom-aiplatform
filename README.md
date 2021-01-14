@@ -6,11 +6,11 @@
 
 
 # Introduction
-Ever wanted to quickly train a text classifier without having to worry about lame things like "which framework should I use ?" or "should I create a VM to run on GPU?" ? Well, this repo should help you.
+Ever wanted to quickly train a text classifier without having to worry about lame things like "which framework should I use ?" or "should I use a VM to run on GPU?" ? Well, this repo should help you.
 
 Thanks to AI Platform, a fully-managed cost-effective service provided by Google Cloud Platform, you can now train ML models directly on cloud using any framework you want by deploying a custom Docker container hosting your training code on GCR, and calling it from your machine with a simple command. 
 
-You will find in this repo everything you need to easily build and deploy a custom Docker container to train a text-classifier on AI Platform with FastAI, a PyTorch wrapper that allows you to train powerful models with only few samples thanks to transfer learning. 
+You will find in this repo everything you need to easily build and deploy a custom Docker container to train a text-classifier on AI Platform with FastAI, a PyTorch wrapper that allows you to train powerful models with only few samples thanks to transfer learning. Indeed, FastAI text classifiers are created using ULM FiT method, which allows you to create classifiers using pre-trained Language models (you can find more details [here](https://towardsdatascience.com/understanding-language-modelling-nlp-part-1-ulmfit-b557a63a672b#:~:text=Universal%20Language%20Model%20FIne%2DTuning,by%20XLNet%20in%20text%20classification%5D.), but don't worry, you can follow this tutorial without knowing anything about language models).
 
 By simply modifying few lines of code, you'll be able to create a text classifier adapted to your particular use case, whether you need to assign sentiment scores to movie reviews of a french website, or predict if a Japanese Instagram publication is about beauty or food. 
 
@@ -18,15 +18,16 @@ By simply modifying few lines of code, you'll be able to create a text classifie
 # Pre-requisites
 To follow this tutorial, be sure to have in possession the following elements:
 - A GCP environment, with access to Cloud Container, Storage and AI Platform
-- A VM (or your personal computer) with a GPU. We’ll consider here that you can access a Google VM with GPU enabled. You can create a ready-to-use Deep Learning VM from Google’s Market Place. It is not necessary to have a VM with a GPU, but it will allow you to test if everything is running OK before pushing it to AI Platform
-- Docker and nvidia-docker installed on your VM. You can find how to install them here:
-  - https://docs.docker.com/engine/install/ubuntu/ to install docker
-  - https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker to install nvidia-docker
+- A VM (or your personal computer) with a GPU. We’ll consider here that you can access a Google VM with GPU enabled. You can create a ready-to-use Deep Learning VM from Google’s Market Place. 
+It is not necessary to have a VM with a GPU, but it will allow you to test if everything is running OK before pushing it to AI Platform
 - A labelled dataset to train your model on (one is provided in this tutorial if you just want to know how to train the model), where the labels to predict are one-hot encoded (i.e there is a column for every label, that contains True/False or 0/1 for each texts).
 
 
 # Set-up your environment
 The first thing you’ll have to do will be to setup your working environment:
+- Install Docker and nvidia-docker on your VM. You can find how to install them here:
+  - https://docs.docker.com/engine/install/ubuntu/ to install docker
+  - https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker to install nvidia-docker
 - Install and initiate Google Cloud SDK https://cloud.google.com/sdk/docs/install#linux
 - Allow yourself to run Docker without using sudo
 > ```python
@@ -37,22 +38,6 @@ The first thing you’ll have to do will be to setup your working environment:
 > gcloud auth configure-docker
 > ```
 
-- Define global variables
-  - BUCKET_NAME: The name of your bucket in GCS (e.g "my_bucket")
-  - PROJECT_ID: The name of your GCP Project, accessible by doing:
-  > ```python
-  > gcloud config list project --format "value(core.project)"
-  > ```
-  - REGION: The region you operate in, choose one with GPUs available (e.g "europe-west1" for Europe)
-  - IMAGE_REPO_NAME: The name of the folder where will be stored your containers in Container Registry, (e.g "fastai_gpu_container")
-  - IMAGE_TAG: The tag name you want to give to your future container (e.g "french_training")
-  - IMAGE_URI: The URI to your future container:
-  > ```python
-  > export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
-  > ```
-  - MODEL_DIR: The directory in your bucket that will store your trained model (e.g "models")
-  - JOB_NAME: AI Platform job name (e.g "fastai_gpu_french_job1")
-
 - Create a bucket on GCS with the same architecture as in the following drive, and upload your files in it:
   https://drive.google.com/drive/folders/1JHfan6SFOXz5X0h49GOdORQQI3-rjpJX?usp=sharing.
 
@@ -62,7 +47,23 @@ The first thing you’ll have to do will be to setup your working environment:
     - A vocab.pkl file corresponding to the vocabulary of the LM
     - A config.json file where the configuration of the model is encoded
     - A weights.pth file containing the weights of the model
-  You will be able to specify if you want to use a backward model to train your classifier if it's available. English LM being already handled by Fastai, no pretrained LM is necessary for this language.
+  You will be able to specify if you want to use a backward model to train your classifier if it's available (which is usually more efficient). English LM being already handled by Fastai, no pretrained LM is necessary for this language.
+
+- Define global variables
+  - BUCKET_NAME: The name of your bucket in GCS (e.g "my_bucket")
+  - PROJECT_ID: The name of your GCP Project, accessible by doing:
+  > ```python
+  > gcloud config list project --format "value(core.project)"
+  > ```
+  - REGION: The region the training will operate in. Be sure to choose one with GPUs available (e.g "europe-west1" for Europe)
+  - IMAGE_REPO_NAME: The name of the folder where will be stored your containers in Container Registry, (e.g "fastai_gpu_container")
+  - IMAGE_TAG: The tag name you want to give to your future container (e.g "french_training")
+  - IMAGE_URI: The URI to your future container:
+  > ```python
+  > export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
+  > ```
+  - MODEL_DIR: The directory in your bucket that will store your trained model (e.g "models")
+  - JOB_NAME: AI Platform job name (e.g "fastai_gpu_french_job1")
 
 
 # Train the model
@@ -79,6 +80,9 @@ The fastai_config.py file contains all the variables that will be useful to trai
     - TEXT_COL_NAME: Name of the text column in your labelled dataset
     - LABEL_LIST: List of the labels to be taken into account (referring to the columns of your one-hot encoded dataset)
     
+    For example, we'll use in this tutorial a dataset containing three columns: "text_clean" for text, and "skincare" and "makeup" for labels.
+    These two values are the only one to be modified if you provide your own training dataset.
+    
   - Name of the variables that will be created during the training:
     - LABEL_COL_NAME: Name of the column containing the separated labels, that will be created from your one-hot encoded columns
     - LABEL_DELIM: Delimiter between your labels in your LABEL_COL_NAME column
@@ -92,7 +96,7 @@ The fastai_config.py file contains all the variables that will be useful to trai
     - TEST_SIZE: Proportion of samples to be used for testing
     - PREDICTION_THRESHOLD: Threshold from which the model will assign a prediction to a label for a given text
  
-The other variables refer to the names and locations of all the files to be used during the training.
+The other variables refer to the names and locations of all the files to be used during the training. If you use the same architecture and same file names as in the provided Google Drive, you shouldn't have to modify anything regarding that part.
 
 
 ## Build image.
@@ -100,8 +104,8 @@ The image is built based on Nvidia Cuda 10.1-devel image, which should automatic
 > ```python
 > docker build -f Dockerfile -t $IMAGE_URI ./
 > ```
-You’ll get a success message if the image is built correctly, or an error message otherwise. Be really careful at the python, pip, pytorch and nvidia version you choose, because incompatibilities will cause the package you want to install to fail without any specific reason.
-Build may fail due to a lack of RAM so be sure that the machine you're using can handle it. You shouldn't have any problem if you use Google's GPU-enabled VMs.
+You’ll get a success message if the image is built correctly, or an error message otherwise. Be really careful of the python, pip, pytorch and nvidia version you choose, because incompatibilities will cause the package you want to install to fail without any specific reason. There shouldn't be any problem regarding that part though.
+Build also may fail due to a lack of RAM so be sure that the machine you're using can handle it. You shouldn't have any problem if you use Google's GPU-enabled VMs.
 
 
 ## (Optional) Run image before pushing to ensure its well-behavior
@@ -121,12 +125,12 @@ After running the image and ensured it worked, you can push it to GCR using the 
 > ```python
 > docker push $IMAGE_URI
 > ```
-The container will be visible in Container registry.
+The container will be visible in Google Container registry.
 
 
 ## Run AI Platform job
-Now that your custom container is in GCR, everything is ready. You can start the training on AI Platform using a simple command, from any machine you want, assuming that it has access to your GCP project and to AI Platform.
-You just have to run the following command for everything to start running. You’ll receive a notification when the training is ready
+Now that your custom container is in GCR, everything is ready to go. You can start the training on AI Platform using a simple command, from any machine you want, assuming that it has access to your GCP project and to AI Platform.
+You just have to run the following command for everything to start running:
 
 > ```python
 > gcloud ai-platform jobs submit training $JOB_NAME \
@@ -144,7 +148,7 @@ We specified a few parameters here:
   - The name of the job
   - The type of scaling we want, BASIC_GPU here
   - The region we want our running machine to be
-  - The URI of our custom container
+  - The URI of our custom container, that contains our training code
   - Training arguments, that have been defined in the args_getter.py file
   
 These training arguments are not all necessary if they have a default value, but allow you to customize the training of your model. They can be specified after the "-- \" when running your command:
