@@ -14,6 +14,7 @@ You will find in this repo everything you need to easily build and deploy a cust
 
 By simply modifying few lines of code, you'll be able to create a text classifier adapted to your particular use case, whether you need to assign sentiment scores to movie reviews of a french website, or predict if a Japanese Instagram publication is about beauty or food. 
 
+Two other branches have also been made if you want to train a model without fastai ([feature/no_trainer](https://github.com/artefactory/train-fastai-custom-aiplatform/tree/feature/no_trainer)) or if you just want to use a premade custom container to train a text classifier by running a single command ([feature/customizable_fastai_nobuild](https://github.com/artefactory/train-fastai-custom-aiplatform/tree/feature/customizable_fastai_nobuild)). 
 
 # Pre-requisites
 To follow this tutorial, be sure to have in possession the following elements:
@@ -21,6 +22,8 @@ To follow this tutorial, be sure to have in possession the following elements:
 - A VM (or your personal computer) with a GPU. We’ll consider here that you can access a Google VM with GPU enabled. You can create a ready-to-use Deep Learning VM from Google’s Market Place. 
 It is not necessary to have a VM with a GPU, but it will allow you to test if everything is running OK before pushing it to AI Platform
 - A labelled dataset to train your model on (one is provided in this tutorial if you just want to know how to train the model), where the labels to predict are one-hot encoded (i.e there is a column for every label, that contains True/False or 0/1 for each texts).
+
+For example, we'll use in this tutorial a dataset that has three columns : text_clean | skincare | makeup, where "text_clean" contains the text to train the model on, and where "skincare" and "makeup" are filled with 0 or 1 to indicates if a text is about one of these beauty categories.
 
 
 # Set-up your environment
