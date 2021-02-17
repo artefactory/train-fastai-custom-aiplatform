@@ -14,12 +14,8 @@ def train_model():
 
     # Upload model to GCS
     if args.model_dir:
-        gcs_model_file_path = os.path.join(f'gs://{args.bucket_name}', args.model_dir, model_file_name)
-        upload_file_to_gcs(model_file_name,
-                           gcs_model_file_path)
-        gcs_label_scores_file_path = os.path.join(f'gs://{args.bucket_name}', args.model_dir, label_scores_file_name)
-        upload_file_to_gcs(label_scores_file_name,
-                           gcs_label_scores_file_path)
+        upload_file_to_gcs(args.bucket_name, model_file_name, os.path.join(args.model_dir, model_file_name))
+        upload_file_to_gcs(args.bucket_name, label_scores_file_name, os.path.join(args.model_dir, label_scores_file_name))
 
 
 if __name__ == '__main__':
