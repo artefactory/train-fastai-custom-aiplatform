@@ -21,6 +21,7 @@ To follow this tutorial, be sure to have in possession the following elements:
 - A GCP environment, with access to Container Registry, Storage and AI Platform
 - A labelled dataset to train your model on (one is provided in this tutorial if you just want to know how to train the model), where the labels to predict are one-hot encoded (i.e there is a column for every label, that contains True/False or 0/1 for each texts).
 For example, we'll use in this tutorial a dataset that has three columns : text_clean | skincare | makeup, where "text_clean" contains the text to train the model on, and where "skincare" and "makeup" are filled with 0 or 1 to indicates if a text is about one of these beauty categories
+- A pre-trained universal language model adapted to your target language if you're working on another language than English. One for French, Korean, Japanese and Chinese is available on the Google Drive (link below in the ReadMe). This pre-trained LM is composed of a weights.pth file, a vocab.pkl file and a spm.model file (the last one is used by the sentencepiece tokenizer)
 - (Optional) A VM or your personal computer with a GPU. We’ll consider here that you can access a Google VM with GPU enabled, which can be easily created using a ready-to-use Deep Learning VM from Google’s Market Place. 
 It is not necessary to have one, but it will allow you to test if everything is running OK before pushing your container to AI Platform
 
@@ -45,10 +46,11 @@ The first thing you’ll have to do will be to setup your working environment:
 
   You will find on this Drive all the files that are necessary to train a classifier in 5 languages (English, French, Korean, Japanese or Chinese):
   - A labelled dataset to train your classifier (that can be replaced by your own)
-  - A pretrained language model (forward or backward may be available) defined by three files:
+  - A pretrained language model (forward or backward may be available) defined by four files:
     - A vocab.pkl file corresponding to the vocabulary of the LM
     - A config.json file where the configuration of the model is encoded
     - A weights.pth file containing the weights of the model
+    - A spm.model file corresponding to the sentencepiece tokenizer used by the model
   You will be able to specify if you want to use a backward model to train your classifier if it's available (which is usually more efficient). English LM being already handled by Fastai, no pretrained LM is necessary for this language.
 
 - Define global variables
