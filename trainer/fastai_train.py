@@ -10,6 +10,7 @@ from fastai.data.transforms import ColReader, RandomSplitter
 from fastai.learner import load_learner
 from fastai.metrics import Perplexity, accuracy, error_rate
 from fastai.text.all import (AWD_LSTM, AWD_QRNN, awd_lstm_clas_config, awd_lstm_lm_config)
+from fastai.text.core import SentencePieceTokenizer
 from fastai.text.data import TextBlock
 from fastai.text.learner import language_model_learner, text_classifier_learner
 from sklearn.metrics import accuracy_score, precision_score, recall_score
