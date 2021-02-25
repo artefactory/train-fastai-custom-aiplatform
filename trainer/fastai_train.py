@@ -95,10 +95,13 @@ def fit_with_gradual_unfreezing(learner, epochs, lr):
 
 def finetune_lm(train_df, config, arch, args):
     # Function to fine-tune the pre-trained language model
+    if args.lang != 'en':
+        tok = SentencePieceTokenizer(lang=args.lang, sp_model=SP_MODEL_LOCAL_PATH)
+    else:
+        tok = None
     blocks = TextBlock.from_df(TEXT_COL_NAME,
                                is_lm=True,
-                               tok=SentencePieceTokenizer(lang=args.lang,
-                                                          sp_model=SP_MODEL_LOCAL_PATH)
+                               tok=tok
                                )
 
     data_block = DataBlock(blocks=blocks,
@@ -140,7 +143,7 @@ def train_classifier(train_df, lm_dls, config, arch, args):
     blocks = (TextBlock.from_df(TEXT_COL_NAME,
                                 is_lm=False,
                                 seq_len=lm_dls.seq_len,
-                                vocab=lm_dls.vocab
+                                vocab=lm_dls.vocab,
                                 tok=lm_dls.tok),
               block_category)
 
