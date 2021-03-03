@@ -14,17 +14,15 @@ You will find in this repo everything you need to easily build and deploy a cust
 
 By simply modifying few lines of code, you'll be able to create a text classifier adapted to your particular use case, whether you need to assign sentiment scores to movie reviews of a french website, or predict if a Japanese Instagram publication is about beauty or food. 
 
-Two other branches have also been made if you want to train a model without fastai ([feature/no_trainer](https://github.com/artefactory/train-fastai-custom-aiplatform/tree/feature/no_trainer)) or if you just want to use a premade custom container to train a text classifier by running a single command ([feature/customizable_fastai_nobuild](https://github.com/artefactory/train-fastai-custom-aiplatform/tree/feature/customizable_fastai_nobuild)). 
 
 # Pre-requisites
-To follow this tutorial, be sure to have in possession the following elements:
-- A GCP environment, with access to Container Registry, Storage and AI Platform
+To follow this tutorial, be sure to possess the following elements:
+- A GCP environment, with access to Container Registry, Cloud Storage and AI Platform
 - A labelled dataset to train your model on (one is provided in this tutorial if you just want to know how to train the model), where the labels to predict are one-hot encoded (i.e there is a column for every label, that contains True/False or 0/1 for each texts).
 For example, we'll use in this tutorial a dataset that has three columns : text_clean | skincare | makeup, where "text_clean" contains the text to train the model on, and where "skincare" and "makeup" are filled with 0 or 1 to indicates if a text is about one of these beauty categories
 - A pre-trained universal language model adapted to your target language if you're working on another language than English. One for French, Korean, Japanese and Chinese is available on the Google Drive (link below in the ReadMe). This pre-trained LM is composed of a weights.pth file, a vocab.pkl file and a spm.model file (the last one is used by the sentencepiece tokenizer)
-- (Optional) A VM or your personal computer with a GPU. We’ll consider here that you can access a Google VM with GPU enabled, which can be easily created using a ready-to-use Deep Learning VM from Google’s Market Place. 
-It is not necessary to have one, but it will allow you to test if everything is running OK before pushing your container to AI Platform
-
+- (Optional) A VM or your personal computer with a GPU and enough RAM to build the Docker Image, which is not necessary but will allow you to test if everything is running OK before pushing your container to AI Platform. 
+We’ll consider here that you can access a Google VM with GPU enabled, which can be easily created using a ready-to-use Deep Learning VM from Google’s Market Place.
 
 # Set-up your environment
 The first thing you’ll have to do will be to setup your working environment:
@@ -53,6 +51,8 @@ The first thing you’ll have to do will be to setup your working environment:
     - A spm.model file corresponding to the sentencepiece tokenizer used by the model
   You will be able to specify if you want to use a backward model to train your classifier if it's available (which is usually more efficient). English LM being already handled by Fastai, no pretrained LM is necessary for this language.
 
+If your architecture in your bucket is different than the Drive's, you can modify the scheme of your files path in trainer/fastai_config.py
+
 - Define global variables
   - BUCKET_NAME: The name of your bucket in GCS (e.g "my_bucket")
   - PROJECT_ID: The name of your GCP Project, accessible by doing:
@@ -60,14 +60,14 @@ The first thing you’ll have to do will be to setup your working environment:
   > gcloud config list project --format "value(core.project)"
   > ```
   - REGION: The region the training will operate in. Be sure to choose one with GPUs available (e.g "europe-west1" for Europe)
-  - IMAGE_REPO_NAME: The name of the folder where will be stored your containers in Container Registry, (e.g "fastai_gpu_container")
+  - IMAGE_REPO_NAME: The name of the folder where your containers will be stored in Container Registry, (e.g "fastai_gpu_container")
   - IMAGE_TAG: The tag name you want to give to your future container (e.g "french_training")
   - IMAGE_URI: The URI to your future container:
   > ```python
   > export IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
   > ```
   - MODEL_DIR: The directory in your bucket that will store your trained model (e.g "models")
-  - JOB_NAME: AI Platform job name (e.g "fastai_gpu_french_job1")
+  - JOB_NAME: An AI Platform job name (e.g "fastai_gpu_french_job1")
 
 
 # Train the model
@@ -112,8 +112,8 @@ You’ll get a success message if the image is built correctly, or an error mess
 Build also may fail due to a lack of RAM so be sure that the machine you're using can handle it. You shouldn't have any problem if you use Google's GPU-enabled VMs.
 
 
-## (Optional) Run image before pushing to ensure its well-behavior
-Once your image is built, you can run the container with basic parameters just to ensure everything works. Run this command and wait for it to complete before following this tutorial.
+## (Optional) Run the code in the container before pushing to ensure its well-behavior
+Once your image is built, you can run the code in the container with basic parameters just to ensure everything works. Run this command and wait for it to complete before following this tutorial.
 > ```python
 > docker run --runtime=nvidia $IMAGE_URI --epochs 1 --bucket-name $BUCKET_NAME
 > ```
@@ -124,12 +124,11 @@ Note: We only specified here a few parameters:
 - --bucket-name $BUCKET_NAME: We specifiy the name of the bucket to get the training files from
 
 
-## Push your container
+## Push your image to GCR
 After running the image and ensured it worked, you can push it to GCR using the following command:
 > ```python
 > docker push $IMAGE_URI
 > ```
-The container will be visible in Google Container registry.
 
 
 ## Run AI Platform job
@@ -150,20 +149,19 @@ You just have to run the following command for everything to start running:
 
 We specified a few parameters here:
   - The name of the job
-  - The type of scaling we want, BASIC_GPU here
-  - The region we want our running machine to be
-  - The URI of our custom container, that contains our training code
+  - The type of scaling you want, BASIC_GPU here
+  - The region you want your running machine to be
+  - The URI of your custom container stored in GCR, that contains the training code
   - Training arguments, that have been defined in the args_getter.py file
   
 These training arguments are not all necessary if they have a default value, but allow you to customize the training of your model. They can be specified after the "-- \" when running your command:
-  - --lang: The language of our dataset, to choose among "en", "fr", "ja", "ko" and "zh" (default = "fr")
+  - --lang: The language of your dataset, to choose among "en", "fr", "ja", "ko" and "zh" (default = "fr")
   - --bucket-name: The name of your bucket on GCS
   - --model-dir: The name of the directory to store your trained model on GCS
   - --drop-mult: The value of the Drop-Multiplier to decrease risk of overfitting (default = 0.3)
   - --batch-size: The size of text batches to be processed at the same time during model's fitting (default = 16)
   - --epochs: The number of epochs to train your model during each cycle of fitting (default = 8)
-  - --bw: The type of pretrained LM you want to use (forward or backward). Specify '--bw' if you want to use a backward model, nothing otherwise.
-
+  - --bw: The type of pretrained LM you want to use (forward or backward). Specify '--bw' if you want to use a backward model, nothing otherwise (you can see in the GCS bucket if a backward LM is available for the language you want to work on)
 
 The training might take some time depending on the training arguments you chose (especially the number of epochs)
 
