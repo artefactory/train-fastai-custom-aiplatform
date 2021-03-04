@@ -19,7 +19,17 @@ RUN mkdir /root/trainer
 
 RUN mkdir /root/models
 
-# Copy requirements
+# Copy files
+COPY trainer/fastai_train.py /root/trainer/fastai_train.py
+
+COPY trainer/fastai_config.py /root/trainer/fastai_config.py
+
+COPY trainer/args_getter.py /root/trainer/args_getter.py
+
+COPY trainer/gcs_utils.py /root/trainer/gcs_utils.py
+
+COPY trainer/training_workflow.py /root/trainer/training_workflow.py
+
 COPY requirements.txt /root/requirements.txt
 
 # Install pytorch
@@ -47,17 +57,6 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
-
-# Copy necessary files
-COPY trainer/fastai_train.py /root/trainer/fastai_train.py
-
-COPY trainer/fastai_config.py /root/trainer/fastai_config.py
-
-COPY trainer/args_getter.py /root/trainer/args_getter.py
-
-COPY trainer/gcs_utils.py /root/trainer/gcs_utils.py
-
-COPY trainer/training_workflow.py /root/trainer/training_workflow.py
 
 # Authentificate to GCP
 CMD gcloud auth login
