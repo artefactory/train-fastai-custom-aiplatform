@@ -1,5 +1,5 @@
 # Dockerfile
-FROM nvidia/cuda:10.1-devel
+FROM nvidia/cuda:10.2-devel
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
@@ -24,7 +24,9 @@ RUN mkdir /root/models
 COPY requirements.txt /root/requirements.txt
 
 # Install pytorch
-RUN pip3 install torch==1.7.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+#RUN pip3 install torch==1.7.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+
+RUN pip install torch
 
 # Install requirements
 RUN pip3 install -r requirements.txt
