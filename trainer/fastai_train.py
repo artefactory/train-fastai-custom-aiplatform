@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from fastai_config import (BESTMODEL_NAME, BESTMODEL_NAME_UNF, CONFIG_GCS_PATH,
                            CONFIG_LOCAL_PATH, DATASET_GCS_PATH,
                            DATASET_LOCAL_PATH, ENCODER_FILE_NAME,
+                           LABEL_COL_NAME,
                            LM_BACKWARD_FOLDER, LM_FORWARD_FOLDER,
                            LM_MODEL_PATH, PREDICTION_COL_NAME, RANDOM_STATE,
                            SP_MODEL_GCS_PATH, SP_MODEL_LOCAL_PATH, TEST_SIZE,
@@ -26,7 +27,7 @@ from fastai_config import (BESTMODEL_NAME, BESTMODEL_NAME_UNF, CONFIG_GCS_PATH,
 from gcs_utils import download_file_from_gcs
 
 
-def _format_column_multilabels(row, label_list, label_delim, other_label_name=OTHER_LABEL_NAME):
+def _format_column_multilabels(row, label_list, label_delim, other_label_name):
     # Format dataframe label column
     multilabel = []
     for label in label_list:
@@ -115,7 +116,7 @@ def finetune_lm(train_df, config, arch, args):
                                         config=config,
                                         path=LM_MODEL_PATH,
                                         pretrained=True,
-                                        pretrained_fnames=pretrained_filenames).to_fp16()
+                                        pretrained_fnames=pretrained_filenames).to_fp32()
 
     lr = find_best_lr(learner_lm)
 
@@ -156,7 +157,7 @@ def train_classifier(train_df, lm_dls, config, arch, args, label_list):
                                           path=clf_dataloaders.path,
                                           drop_mult=args.drop_mult,
                                           config=config_cls,
-                                          pretrained=False).to_fp16()
+                                          pretrained=False).to_fp32()
     learner_clf.load_encoder(ENCODER_FILE_NAME)
 
     lr = find_best_lr(learner_clf)
@@ -210,7 +211,7 @@ def train_fastai_model(args):
 
     # Format dataframe for training
     df = pd.read_csv(DATASET_LOCAL_PATH.format(args.dataset_filename))
-    df.loc[:, args.label_col] = df.apply(_format_column_multilabels, args=(label_list, args.label_delim), axis=1)
+    df.loc[:, LABEL_COL_NAME] = df.apply(_format_column_multilabels, args=(label_list, args.label_delim, args.other_label), axis=1)
     train_df, test_df = train_test_split(df.dropna(), test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
     # Open json config file
