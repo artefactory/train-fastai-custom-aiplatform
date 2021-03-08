@@ -20,12 +20,9 @@ RUN mkdir /root/trainer
 RUN mkdir /root/models
 
 # Copy requirements
-
 COPY requirements.txt /root/requirements.txt
 
 # Install pytorch
-#RUN pip3 install torch==1.7.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
-
 RUN pip install torch
 
 # Install requirements
