@@ -23,7 +23,7 @@ RUN mkdir /root/models
 COPY requirements.txt /root/requirements.txt
 
 # Install pytorch
-RUN pip install torch
+RUN pip3 install torch==1.8.0+cu102 -f https://download.pytorch.org/whl/torch_stable.html
 
 # Install requirements
 RUN pip3 install -r requirements.txt
