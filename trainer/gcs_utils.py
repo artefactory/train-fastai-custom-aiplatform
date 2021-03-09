@@ -1,4 +1,3 @@
-import subprocess
 from google.cloud import storage
 
 def download_file_from_gcs(bucket_name, source_blob_name, destination_file_name):

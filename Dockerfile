@@ -1,5 +1,5 @@
 # Dockerfile
-FROM nvidia/cuda:10.1-devel
+FROM nvidia/cuda:10.2-devel
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
@@ -23,7 +23,7 @@ RUN mkdir /root/models
 COPY requirements.txt /root/requirements.txt
 
 # Install pytorch
-RUN pip3 install torch==1.7.1+cu101 -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip3 install torch==1.8.0
 
 # Install requirements
 RUN pip3 install -r requirements.txt
@@ -42,13 +42,7 @@ RUN wget -nv \
     # Remove the backup directory that gcloud creates
     rm -rf /root/tools/google-cloud-sdk/.install/.backup
 
-# Path configuration
-ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
-
-# Make sure gsutil will use the default service account
-RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
-
-# Copy necessary files
+# Copy files
 COPY trainer/fastai_train.py /root/trainer/fastai_train.py
 
 COPY trainer/fastai_config.py /root/trainer/fastai_config.py
@@ -58,6 +52,12 @@ COPY trainer/args_getter.py /root/trainer/args_getter.py
 COPY trainer/gcs_utils.py /root/trainer/gcs_utils.py
 
 COPY trainer/training_workflow.py /root/trainer/training_workflow.py
+
+# Path configuration
+ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
+
+# Make sure gsutil will use the default service account
+RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
 # Authentificate to GCP
 CMD gcloud auth login

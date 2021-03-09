@@ -79,32 +79,20 @@ If your architecture in your bucket is different than the Drive's, you can modif
 
 
 ## Take a look at the configuration file and make necessary changes
-The fastai_config.py file contains all the variables that will be useful to train your model, and the names of the files to fetch your model with. Here's the list of all the variables:
-  - Information describing your dataframe (You need to make sure these correspond to your actual training labelled dataset):
-    - TEXT_COL_NAME: Name of the text column in your labelled dataset
-    - LABEL_LIST: List of the labels to be taken into account (referring to the columns of your one-hot encoded dataset)
-    
-    For example, we'll use in this tutorial a dataset containing three columns: "text_clean" for text, and "skincare" and "makeup" for labels.
-    These two values are the only one to be modified if you provide your own training dataset.
-    
-  - Name of the variables that will be created during the training:
-    - LABEL_COL_NAME: Name of the column containing the separated labels, that will be created from your one-hot encoded columns
-    - LABEL_DELIM: Delimiter between your labels in your LABEL_COL_NAME column
-    - OTHER_LABEL_NAME: Label to give when no label is assigned to a text
-    - PREDICTION_COL_NAME: Name of the column that will store the predictions during inference on test dataset (to assess model's performances)
-    
-  - Parameters that will have an influence on your training
-    - METRIC_TO_MONITOR: Metric to be monitored during the training to improve your model
-    - RANDOM_STATE: Random state of train/test/valid split of dataframe
-    - VAL_SIZE: Proportion of samples to be used for validation
-    - TEST_SIZE: Proportion of samples to be used for testing
-    - PREDICTION_THRESHOLD: Threshold from which the model will assign a prediction to a label for a given text
+The fastai_config.py file contains variables that will be useful to train your model, and the names of the files to fetch your model with. 
+
+Here's the list of the training parameters variables:
+  - LABEL_COL_NAME: Name of the column containing the separated labels, that will be created from your one-hot encoded columns
+  - PREDICTION_COL_NAME: Name of the column that will store the predictions during inference on test dataset (to assess model's performances)
+  - RANDOM_STATE: Random state of train/test/valid split of dataframe
+  - VAL_SIZE: Proportion of samples to be used for validation
+  - TEST_SIZE: Proportion of samples to be used for testing
  
 The other variables refer to the names and locations of all the files to be used during the training. If you use the same architecture and same file names as in the provided Google Drive, you shouldn't have to modify anything regarding that part.
 
 
 ## Build image.
-The image is built based on Nvidia Cuda 10.1-devel image, which should automatically be pulled when trying to build.
+The image is built based on Nvidia Cuda 10.2-devel image, which should automatically be pulled when trying to build.
 > ```python
 > docker build -f Dockerfile -t $IMAGE_URI ./
 > ```
@@ -155,13 +143,22 @@ We specified a few parameters here:
   - Training arguments, that have been defined in the args_getter.py file
   
 These training arguments are not all necessary if they have a default value, but allow you to customize the training of your model. They can be specified after the "-- \" when running your command:
-  - --lang: The language of your dataset, to choose among "en", "fr", "ja", "ko" and "zh" (default = "fr")
   - --bucket-name: The name of your bucket on GCS
   - --model-dir: The name of the directory to store your trained model on GCS
+  - --model-filename: The name given to the trained model in GCS (default = "fastai_model.pth")
+  - --score-filename: The name given to the json file containing your model performances in GCS (default = "label_scores.json")
+  - --dataset-filename: The name of your labelled dataset to be retrieved in GCS (default = "labelled_dataset.csv")
+  - --lang: The language of your dataset, to choose among "en", "fr", "ja", "ko" and "zh" (default = "fr")
   - --drop-mult: The value of the Drop-Multiplier to decrease risk of overfitting (default = 0.3)
   - --batch-size: The size of text batches to be processed at the same time during model's fitting (default = 16)
   - --epochs: The number of epochs to train your model during each cycle of fitting (default = 8)
   - --bw: The type of pretrained LM you want to use (forward or backward). Specify '--bw' if you want to use a backward model, nothing otherwise (you can see in the GCS bucket if a backward LM is available for the language you want to work on)
+  - --monitored-metric: The metric to monitor to keep the best model during the training (default = "valid_loss")
+  - --prediction-threshold: The threshold from which we consider a prediction probability is positive (default = 0.3)
+  - --text-col: The name of the column containing the texts in your labelled dataset (default = "text_clean")
+  - --label-delim: The delimiter to be used when separating the various labels (default = ",")
+  - --other-label: The name of the label to be assigned when no other labeled has been assigned (default = "other")
+
 
 The training might take some time depending on the training arguments you chose (especially the number of epochs)
 
