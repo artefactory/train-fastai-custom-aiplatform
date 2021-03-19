@@ -155,8 +155,9 @@ These training arguments are not all necessary if they have a default value, but
   - --bw: The type of pretrained LM you want to use (forward or backward). Specify '--bw' if you want to use a backward model, nothing otherwise (you can see in the GCS bucket if a backward LM is available for the language you want to work on)
   - --monitored-metric: The metric to monitor to keep the best model during the training (default = "valid_loss")
   - --prediction-threshold: The threshold from which we consider a prediction probability is positive (default = 0.3)
-  - --text-col: The name of the column containing the texts in your labelled dataset (default = "text_clean")
+  - --text-col: The name of the column containing the texts in your labelled dataset (default = "text")
   - --label-delim: The delimiter to be used when separating the various labels (default = ",")
+  - --label-list: List of the labels in your training dataset, separated by label_delim (default = "categ1,categ2")
   - --other-label: The name of the label to be assigned when no other labeled has been assigned (default = "other")
 
 
