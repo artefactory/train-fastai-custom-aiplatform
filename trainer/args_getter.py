@@ -69,7 +69,7 @@ def get_args():
     # Labelled dataset information 
     parser.add_argument(
         '--text-col',
-        default="text_clean",
+        default="text",
         help='Name of the column containing texts in your labelled dataset')
     parser.add_argument(
         '--label-delim',
@@ -77,7 +77,7 @@ def get_args():
         help='Character that delimits your various labels')
     parser.add_argument(
         '--label-list',
-        default="skincare",
+        default="categ1,categ2",
         help='The list of your labels (corresponding to columns) in your dataset, separated by label_delim')
     parser.add_argument(
         '--other-label',
