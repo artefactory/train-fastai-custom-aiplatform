@@ -12,14 +12,14 @@ Thanks to AI Platform, a fully-managed cost-effective service provided by Google
 
 You will find in this repo everything you need to easily build and deploy a custom Docker container to train a text-classifier on AI Platform with FastAI, a PyTorch wrapper that allows you to train powerful models with only few samples thanks to transfer learning. Indeed, FastAI text classifiers are created using ULM FiT method, which allows you to create classifiers using pre-trained Language models (you can find more details [here](https://towardsdatascience.com/understanding-language-modelling-nlp-part-1-ulmfit-b557a63a672b#:~:text=Universal%20Language%20Model%20FIne%2DTuning,by%20XLNet%20in%20text%20classification%5D.), but don't worry, you can follow this tutorial without knowing anything about language models).
 
-By simply modifying few lines of code, you'll be able to create a text classifier adapted to your particular use case, whether you need to assign sentiment scores to movie reviews of a french website, or predict if a Japanese Instagram publication is about beauty or food. 
+By simply modifying few lines of code, you'll be able to create a text classifier adapted to your particular use case, whether you need to assign sentiment scores to movie reviews of a french website, or predict if a Japanese Instagram publication is about sport or food. 
 
 
 # Pre-requisites
 To follow this tutorial, be sure to possess the following elements:
 - A GCP environment, with access to Container Registry, Cloud Storage and AI Platform
-- A labelled dataset to train your model on (one is provided in this tutorial if you just want to know how to train the model), where the labels to predict are one-hot encoded (i.e there is a column for every label, that contains True/False or 0/1 for each texts).
-For example, we'll use in this tutorial a dataset that has three columns : text_clean | skincare | makeup, where "text_clean" contains the text to train the model on, and where "skincare" and "makeup" are filled with 0 or 1 to indicates if a text is about one of these beauty categories. A sample is available in "sample" folder.
+- A labelled dataset to train your model on, where the labels to predict are one-hot encoded (i.e there is a column for every label, that contains True/False or 0/1 for each texts).
+For example, we'll use in this tutorial a dataset that has three columns : text_clean | categ1 | categ2, where "text_clean" contains the text to train the model on, and where "categ1" and "categ2" are filled with 0 or 1 to indicates if a text belongs to one of these categories. A sample is available in "sample" folder.
 - A pre-trained universal language model adapted to your target language if you're working on another language than English. One for French, Korean, Japanese and Chinese is available on the Google Drive (link below in the ReadMe). This pre-trained LM is composed of a weights.pth file, a vocab.pkl file and a spm.model file (the last one is used by the sentencepiece tokenizer)
 - (Optional) A VM or your personal computer with a GPU and enough RAM to build the Docker Image, which is not necessary but will allow you to test if everything is running OK before pushing your container to AI Platform. 
 We’ll consider here that you can access a Google VM with GPU enabled, which can be easily created using a ready-to-use Deep Learning VM from Google’s Market Place.
