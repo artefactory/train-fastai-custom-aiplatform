@@ -59,8 +59,5 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
-# Authentificate to GCP
-CMD gcloud auth login
-
 # Sets up the entry point to invoke the trainer.
 ENTRYPOINT ["python3",  "trainer/training_workflow.py"]
